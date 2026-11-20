@@ -1,0 +1,121 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-20T12:27:53.863Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Invite users\"",
+        "target": {
+          "role": "button",
+          "name": "Invite users",
+          "testId": "invite-users"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Invite via email Send invitations to sp…\" in \"Invite users\"",
+        "target": {
+          "role": "button",
+          "name": "Invite via email Send invitations to specific email addresses.",
+          "testId": "invite-method-email",
+          "within": "Invite users"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/invite.e2e.ts::IAM%20email%20invitation::an%20address%20outside%20the%20allowed%20domains%20needs%20an%20explicit%20choice",
+      "targetId": "web",
+      "instructionDigest": "c61b1f8efc3ea31393c25f2ce07e297585db9d00261ca02238251cc2410a93a8",
+      "paramsDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-sonnet-5-5"
+    },
+    "summary": "Opened Invite users drawer and chose Invite via email. The \"Invite via email\" form is showing: empty \"Invite by email\" field, Organization motadata, optional teams, Send invite disabled.",
+    "startPath": "/motadata/users",
+    "endPath": "/motadata/users",
+    "endAnchors": [
+      {
+        "role": "button",
+        "name": "Back to invite options",
+        "testId": "drawer-back"
+      },
+      {
+        "role": "listitem",
+        "name": "Invite users"
+      },
+      {
+        "text": "Invite via email"
+      },
+      {
+        "name": "required",
+        "text": "*"
+      },
+      {
+        "role": "textbox",
+        "name": "Invite by emailrequired",
+        "testId": "invite-emails",
+        "placeholder": "Enter email addresses"
+      },
+      {
+        "text": "Organization"
+      },
+      {
+        "text": "motadata",
+        "testId": "invite-org-name"
+      },
+      {
+        "text": "Choose teams for access"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "MSP Wide View"
+      },
+      {
+        "name": "anything@vpjygxzu.mailosaur.net"
+      },
+      {
+        "role": "button",
+        "name": "Back to workspace"
+      },
+      {
+        "text": "Settings"
+      },
+      {
+        "role": "button",
+        "name": "Search"
+      },
+      {
+        "role": "textbox",
+        "name": "Search settings",
+        "placeholder": "Search settings"
+      },
+      {
+        "text": "⌘K"
+      },
+      {
+        "text": "People & Access"
+      }
+    ],
+    "endWaitMs": 11847,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "7a66666b9f344662d0a96071d9c601d1ff786731d998d858375b32bfdeaef2d4"
+    }
+  }
+}

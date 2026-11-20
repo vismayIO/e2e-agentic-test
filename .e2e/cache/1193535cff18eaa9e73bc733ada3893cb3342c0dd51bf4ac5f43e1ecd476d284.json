@@ -1,0 +1,109 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-20T12:05:48.176Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Cancel\" in \"Clone access profile\"",
+        "target": {
+          "role": "button",
+          "name": "Cancel",
+          "testId": "profile-cancel",
+          "within": "Clone access profile"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/access-profiles.e2e.ts::IAM%20access%20profiles::replacing%20a%20profile%20with%20a%20new%20one%20keeps%20the%20old%20one%20until%20the%20new%20one%20is%20created",
+      "targetId": "web",
+      "instructionDigest": "efefb0909f266229655e00a881babd220c08d94ab9935fc25a50016d58f1f9dd",
+      "paramsDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-haiku-5-5"
+    },
+    "summary": "Clicked Cancel in the \"Clone access profile\" drawer. The drawer closed without creating a new profile, and the list still shows the original profile \"iam-e2e-mwox5sxn-replace-me\" as row 12 (1 team, Approver, motadata, Active), with no \"Copy of\" profile added.",
+    "startPath": "/motadata/access-profiles",
+    "endPath": "/motadata/access-profiles",
+    "endAnchors": [
+      {
+        "text": "MSP Wide View"
+      },
+      {
+        "name": "anything@vpjygxzu.mailosaur.net"
+      },
+      {
+        "role": "button",
+        "name": "Back to workspace"
+      },
+      {
+        "text": "Settings"
+      },
+      {
+        "role": "button",
+        "name": "Search"
+      },
+      {
+        "role": "textbox",
+        "name": "Search settings",
+        "placeholder": "Search settings"
+      },
+      {
+        "text": "⌘K"
+      },
+      {
+        "text": "People & Access"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "Clone access profile"
+      },
+      {
+        "text": "Name it and choose the roles and the organizations they reach. Who holds it, and until when, is decided when you assign it."
+      },
+      {
+        "name": "required",
+        "text": "*"
+      },
+      {
+        "text": "Organization"
+      },
+      {
+        "text": "MSP owner organization",
+        "testId": "invite-org-name"
+      },
+      {
+        "text": "The access profile belongs to the active frame. Switch to a client frame to create a client access profile."
+      },
+      {
+        "role": "button",
+        "name": "Approver",
+        "testId": "profile-roles-trigger"
+      },
+      {
+        "role": "button",
+        "name": "Remove Approver"
+      }
+    ],
+    "endWaitMs": 12587,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "7a66666b9f344662d0a96071d9c601d1ff786731d998d858375b32bfdeaef2d4"
+    }
+  }
+}

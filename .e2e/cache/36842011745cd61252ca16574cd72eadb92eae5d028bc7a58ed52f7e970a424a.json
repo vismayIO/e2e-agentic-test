@@ -1,0 +1,165 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-20T12:33:23.799Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap cell \"motadata\" in \"12\"",
+        "target": {
+          "role": "cell",
+          "name": "motadata",
+          "within": "12"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap tab \"Teams\" in \"Access profiles\"",
+        "target": {
+          "role": "tab",
+          "name": "Teams",
+          "testId": "tab-teams",
+          "within": "Access profiles"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Add teams\" in \"Teams\"",
+        "target": {
+          "role": "button",
+          "name": "Add teams",
+          "testId": "add-teams",
+          "within": "Teams"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Back to the access profile\" in \"Access profiles\"",
+        "target": {
+          "role": "button",
+          "name": "Back to the access profile",
+          "testId": "drawer-back",
+          "within": "Access profiles"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Close\" in \"Access profiles\"",
+        "target": {
+          "role": "button",
+          "name": "Close",
+          "within": "Access profiles"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap cell \"{{param:/name}}\" in \"16\"",
+        "target": {
+          "role": "cell",
+          "name": "{{param:/name}}",
+          "within": "16"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap tab \"Teams\" in \"Access profiles\"",
+        "target": {
+          "role": "tab",
+          "name": "Teams",
+          "testId": "tab-teams",
+          "within": "Access profiles"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Add teams\" in \"Teams\"",
+        "target": {
+          "role": "button",
+          "name": "Add teams",
+          "testId": "add-teams",
+          "within": "Teams"
+        }
+      },
+      {
+        "name": "check",
+        "summary": "check checkbox \"qa-pw-team\"",
+        "target": {
+          "role": "checkbox",
+          "name": "qa-pw-team"
+        },
+        "checked": true
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Next\" in \"Access profiles\"",
+        "target": {
+          "role": "button",
+          "name": "Next",
+          "testId": "add-holders-next",
+          "within": "Access profiles"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Assign 1 team\" in \"Access profiles\"",
+        "target": {
+          "role": "button",
+          "name": "Assign 1 team",
+          "testId": "add-holders-submit",
+          "within": "Access profiles"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Close\" in \"Access profiles\"",
+        "target": {
+          "role": "button",
+          "name": "Close",
+          "within": "Access profiles"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/access-profiles.e2e.ts::IAM%20access%20profiles::replacing%20a%20profile%20with%20a%20new%20one%20keeps%20the%20old%20one%20until%20the%20new%20one%20is%20created",
+      "targetId": "web",
+      "instructionDigest": "47a718ec92f4fd63906ee3e1b2b82b4e2dd6b0dd617d307c806aeabad137f241",
+      "paramsDigest": "751457cfb4fe3ea5fd59628419e7be2297569589dc3c7b028c5783c4be8f2f4d",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-sonnet-5-5"
+    },
+    "summary": "Opened iam-e2e-mwoyeokw-replace-me (row 16), assigned team qa-pw-team with expiry off. Toast \"1 holder now has iam-e2e-mwoyeokw-replace-me\" appeared and the Teams tab showed \"qa-pw-team Team · Permanent Active\". I closed the drawer, and the list now shows row 16 with \"1 team\".",
+    "startPath": "/motadata/access-profiles",
+    "endPath": "/motadata/access-profiles",
+    "endAnchors": [
+      {
+        "testId": "page-docked-actions"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "role": "button",
+        "name": "Dismiss",
+        "testId": "toast-close"
+      }
+    ],
+    "endWaitMs": 12468,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "7a66666b9f344662d0a96071d9c601d1ff786731d998d858375b32bfdeaef2d4"
+    }
+  }
+}

@@ -1,0 +1,149 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-20T12:29:50.632Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap node \"iam-e2e-mwoyg4li-no-readback\" in \"11\"",
+        "target": {
+          "text": "iam-e2e-mwoyg4li-no-readback",
+          "testId": "sa-name-182",
+          "within": "11"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Add credential\" in \"Credentials\"",
+        "target": {
+          "role": "button",
+          "name": "Add credential",
+          "testId": "add-credential",
+          "within": "Credentials"
+        }
+      },
+      {
+        "name": "type",
+        "summary": "type \"{{param:/key}}\" into textbox \"Credential namerequired\" in \"Service accounts\"",
+        "target": {
+          "role": "textbox",
+          "name": "Credential namerequired",
+          "testId": "cred-name-input",
+          "placeholder": "e.g. CI Pipeline Key, Grafana OAuth Client",
+          "within": "Service accounts"
+        },
+        "value": "{{param:/key}}"
+      },
+      {
+        "name": "check",
+        "summary": "check radio \"API key\" in \"Service accounts\"",
+        "target": {
+          "role": "radio",
+          "name": "API key",
+          "testId": "cred-method-static_api_key",
+          "within": "Service accounts"
+        },
+        "checked": true
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Generate\" in \"Service accounts\"",
+        "target": {
+          "role": "button",
+          "name": "Generate",
+          "testId": "add-credential-submit",
+          "within": "Service accounts"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/service-accounts.e2e.ts::IAM%20service%20accounts::credentials::the%20secret%20cannot%20be%20read%20back%20after%20leaving%20the%20result%20page",
+      "targetId": "web",
+      "instructionDigest": "0b161d5e23f7bb76432cd44df165a6658c86de73cea3d39d39f0d00e8e10dc39",
+      "paramsDigest": "8c5297d752f4d111e89a90edc4ed770dac73ed632df811ec29e304600baee0e5",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-sonnet-5-5"
+    },
+    "summary": "Opened service account iam-e2e-mwoyg4li-no-readback, added API key credential \"iam-e2e-mwoyg4li-no-readback-key\", generated it. Now on the \"Credential created\" dialog showing the secret (testid secret-value) with the \"shown once\" notice, Copy secret and Done buttons. Not dismissed.",
+    "startPath": "/motadata/service-accounts",
+    "endPath": "/motadata/service-accounts/182",
+    "endAnchors": [
+      {
+        "role": "button",
+        "name": "Dismiss",
+        "testId": "toast-close"
+      },
+      {
+        "role": "heading",
+        "name": "Credential created"
+      },
+      {
+        "text": "Copy this secret now — it is shown once and cannot be retrieved again."
+      },
+      {
+        "role": "button",
+        "name": "Copy secret",
+        "testId": "copy-secret"
+      },
+      {
+        "role": "button",
+        "name": "Done",
+        "testId": "confirm-submit"
+      },
+      {
+        "role": "dialog",
+        "name": "Credential created",
+        "testId": "credential-secret"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "MSP Wide View"
+      },
+      {
+        "name": "anything@vpjygxzu.mailosaur.net"
+      },
+      {
+        "role": "button",
+        "name": "Back to workspace"
+      },
+      {
+        "text": "Settings"
+      },
+      {
+        "role": "button",
+        "name": "Search"
+      },
+      {
+        "role": "textbox",
+        "name": "Search settings",
+        "placeholder": "Search settings"
+      },
+      {
+        "text": "⌘K"
+      },
+      {
+        "text": "People & Access"
+      }
+    ],
+    "endWaitMs": 15010,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "5ae7cc732a4b791c08a64aa8c406f721358d25433b9ae6eb6b35f664311f71b6"
+    }
+  }
+}

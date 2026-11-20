@@ -1,0 +1,166 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-20T12:32:20.779Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap textbox \"Search users\"",
+        "target": {
+          "role": "textbox",
+          "name": "Search users",
+          "testId": "strip-search",
+          "placeholder": "Search"
+        }
+      },
+      {
+        "name": "type",
+        "summary": "type \"iam-e2e-mwoy2kdv-delete@vpjygxzu.mailos…\" into textbox \"Search users\"",
+        "target": {
+          "role": "textbox",
+          "name": "Search users",
+          "testId": "strip-search",
+          "placeholder": "Search"
+        },
+        "value": "{{param:/email}}"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Row actions\" in \"E2E delete-mwoy2kdv\"",
+        "target": {
+          "role": "button",
+          "name": "Row actions",
+          "testId": "row-actions-trigger",
+          "within": "E2E delete-mwoy2kdv"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap menuitem \"Delete user\"",
+        "target": {
+          "role": "menuitem",
+          "name": "Delete user",
+          "testId": "row-actions-menu-delete"
+        }
+      },
+      {
+        "name": "type",
+        "summary": "type \"delete\" into textbox \"Type \\\"delete\\\" to confirm\" in \"Delete E2E delete-mwoy2kdv\"",
+        "target": {
+          "role": "textbox",
+          "name": "Type \"delete\" to confirm",
+          "testId": "confirm-word",
+          "within": "Delete E2E delete-mwoy2kdv"
+        },
+        "value": "delete"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Delete\" in \"Delete E2E delete-mwoy2kdv\"",
+        "target": {
+          "role": "button",
+          "name": "Delete",
+          "testId": "confirm-submit",
+          "within": "Delete E2E delete-mwoy2kdv"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/users-lifecycle.e2e.ts::IAM%20person%20lifecycle::a%20deleted%20person::typing%20delete%20removes%20the%20person%20for%20good",
+      "targetId": "web",
+      "instructionDigest": "33f78da08194798cabfb9b840904388807114bd595afa9fb2100d3c75ed034f2",
+      "paramsDigest": "30396b352ca56cb3b6fea07176959d2ccb7bfb0772b2472fe16f29ca746da5e1",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-sonnet-5-5"
+    },
+    "summary": "Searched for iam-e2e-mwoy2kdv-delete@..., chose Delete user (user was already Inactive, so no disable prompt), typed \"delete\", clicked Delete once. A \"User deleted\" toast appeared, the list now shows \"No users match\", and Total users dropped from 92 to 91.",
+    "startPath": "/motadata/users",
+    "endPath": "/motadata/users",
+    "endAnchors": [
+      {
+        "role": "status",
+        "name": "No users match Nothing here matches the current search and filters. Clear search",
+        "testId": "state-empty"
+      },
+      {
+        "role": "status",
+        "name": "User deleted Dismiss",
+        "testId": "toast"
+      },
+      {
+        "text": "96% of total"
+      },
+      {
+        "text": "No users match"
+      },
+      {
+        "text": "Nothing here matches the current search and filters."
+      },
+      {
+        "role": "button",
+        "name": "Clear search",
+        "testId": "clear-filters"
+      },
+      {
+        "text": "User deleted",
+        "testId": "toast-title"
+      },
+      {
+        "role": "button",
+        "name": "Dismiss",
+        "testId": "toast-close"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "95% of total"
+      },
+      {
+        "role": "textbox",
+        "name": "Search users",
+        "testId": "strip-search",
+        "placeholder": "Search"
+      },
+      {
+        "role": "checkbox",
+        "name": "Select all on this page"
+      },
+      {
+        "text": "Name"
+      },
+      {
+        "role": "slider",
+        "name": "Resize Name"
+      },
+      {
+        "text": "Action"
+      },
+      {
+        "text": "Email"
+      },
+      {
+        "role": "slider",
+        "name": "Resize Email"
+      }
+    ],
+    "endWaitMs": 14249,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "7a66666b9f344662d0a96071d9c601d1ff786731d998d858375b32bfdeaef2d4"
+    }
+  }
+}

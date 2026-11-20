@@ -1,0 +1,159 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-20T12:31:13.837Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Create access profile\"",
+        "target": {
+          "role": "button",
+          "name": "Create access profile",
+          "testId": "create-profile"
+        }
+      },
+      {
+        "name": "type",
+        "summary": "type \"{{param:/name}}\" into textbox \"Access profile namerequired\" in \"Create access profile\"",
+        "target": {
+          "role": "textbox",
+          "name": "Access profile namerequired",
+          "testId": "profile-name",
+          "placeholder": "Enter a name",
+          "within": "Create access profile"
+        },
+        "value": "{{param:/name}}"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"You can select more than one…\" in \"Create access profile\"",
+        "target": {
+          "role": "button",
+          "name": "You can select more than one…",
+          "testId": "profile-roles-trigger",
+          "within": "Create access profile"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Approver\" in \"Account Manager\"",
+        "target": {
+          "role": "button",
+          "name": "Approver",
+          "testId": "profile-roles-popover-option-9",
+          "within": "Account Manager"
+        }
+      },
+      {
+        "name": "press",
+        "summary": "press \"Escape\" on dialog \"Select roles to assign\"",
+        "target": {
+          "role": "dialog",
+          "name": "Select roles to assign",
+          "testId": "profile-roles-popover"
+        },
+        "key": "Escape"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Select organizations\" in \"Create access profile\"",
+        "target": {
+          "role": "button",
+          "name": "Select organizations",
+          "testId": "profile-orgs-trigger",
+          "within": "Create access profile"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"MSP owner organization\"",
+        "target": {
+          "role": "button",
+          "name": "MSP owner organization",
+          "testId": "profile-orgs-popover-option-01M6G6MKJA7A7PYD7FWDA81WXR"
+        }
+      },
+      {
+        "name": "press",
+        "summary": "press \"Escape\" on searchbox \"Search organizations\" in \"MSP owner organization\"",
+        "target": {
+          "role": "searchbox",
+          "name": "Search organizations",
+          "testId": "profile-orgs-popover-search",
+          "placeholder": "Search organizations",
+          "within": "MSP owner organization"
+        },
+        "key": "Escape"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Create access profile\"",
+        "target": {
+          "role": "button",
+          "name": "Create access profile",
+          "testId": "profile-submit"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Close\" in \"Access profiles\"",
+        "target": {
+          "role": "button",
+          "name": "Close",
+          "within": "Access profiles"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/access-profiles.e2e.ts::IAM%20access%20profiles::extending%20one%20holder%20leaves%20the%20other%20holder%E2%80%99s%20end%20date%20alone",
+      "targetId": "web",
+      "instructionDigest": "929aa2436a4a8993ba4493dc473265ee3c9333e964fbfaef02725eb3978fb5ec",
+      "paramsDigest": "fe0ec8977efb238a3e5162352b4795a58c1c48aba3db662213434916bb6b17cc",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-sonnet-5-5"
+    },
+    "summary": "The access profile \"iam-e2e-mwoyeokw-two-holders\" now appears in the table as row 14. It has role Approver, organization motadata, status Active and no holders (—). The drawer is closed.",
+    "startPath": "/motadata/access-profiles",
+    "endPath": "/motadata/access-profiles",
+    "endAnchors": [
+      {
+        "text": "14"
+      },
+      {
+        "text": "{{param:/name}}",
+        "testId": "ap-name-29"
+      },
+      {
+        "role": "row",
+        "name": "14 {{param:/name}} Row actions — Approver motadata Active 20 Nov 2026"
+      },
+      {
+        "role": "cell",
+        "name": "14"
+      },
+      {
+        "role": "cell",
+        "name": "{{param:/name}}"
+      }
+    ],
+    "endWaitMs": 10154,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "7a66666b9f344662d0a96071d9c601d1ff786731d998d858375b32bfdeaef2d4"
+    }
+  }
+}

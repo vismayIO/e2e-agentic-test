@@ -1,0 +1,139 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-20T11:59:09.882Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Send invite\" in \"Invite users\"",
+        "target": {
+          "role": "button",
+          "name": "Send invite",
+          "testId": "send-invite",
+          "within": "Invite users"
+        }
+      },
+      {
+        "name": "type",
+        "summary": "type \"iam-e2e-mwoxe2o9-invitee@vpjygxzu.mailo…\" into textbox \"Search users\"",
+        "target": {
+          "role": "textbox",
+          "name": "Search users",
+          "testId": "strip-search",
+          "placeholder": "Search"
+        },
+        "value": "{{param:/email}}"
+      },
+      {
+        "name": "press",
+        "summary": "press \"Enter\" on textbox \"Search users\"",
+        "target": {
+          "role": "textbox",
+          "name": "Search users",
+          "testId": "strip-search",
+          "placeholder": "Search"
+        },
+        "key": "Enter"
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/invite.e2e.ts::IAM%20email%20invitation::inviting%20by%20email%20address%20alone%20adds%20an%20Invited%20row",
+      "targetId": "web",
+      "instructionDigest": "305521ade9d968b19c42072d5ee1dbaa439311766d4260a72a426ee3af949ba9",
+      "paramsDigest": "7112884177195e13665e56a453d5aafb0c1d41d6a459e1ee7fc4f9b315716f3b",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-haiku-5-5"
+    },
+    "summary": "Clicked Send invite (it became disabled and a \"1 invitation sent\" toast appeared). Searched the users list for iam-e2e-mwoxe2o9-invitee@vpjygxzu.mailosaur.net; the result shows 1 row: name iam-e2e-mwoxe2o9-invitee, email matching, Status \"Invited\", Source of truth Manual, Role End User. Pagination …",
+    "startPath": "/motadata/users",
+    "endPath": "/motadata/users",
+    "endAnchors": [
+      {
+        "role": "status",
+        "name": "1 invitation sent Dismiss",
+        "testId": "toast"
+      },
+      {
+        "text": "MSP Wide View"
+      },
+      {
+        "name": "anything@vpjygxzu.mailosaur.net"
+      },
+      {
+        "role": "button",
+        "name": "Back to workspace"
+      },
+      {
+        "text": "Settings"
+      },
+      {
+        "role": "button",
+        "name": "Search"
+      },
+      {
+        "role": "textbox",
+        "name": "Search settings",
+        "placeholder": "Search settings"
+      },
+      {
+        "text": "⌘K"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "role": "status",
+        "name": "vpjygxzu.mailosaur.net is not an allowed domain for this organization. Yes, I allow users from outside the permitted business domains to join via this invite. This override is recorded in the audit log. Yes, I allow users from outside the permitted busines",
+        "testId": "domain-mismatch"
+      },
+      {
+        "role": "button",
+        "name": "Back to invite options",
+        "testId": "drawer-back"
+      },
+      {
+        "role": "listitem",
+        "name": "Invite users"
+      },
+      {
+        "text": "Invite via email"
+      },
+      {
+        "name": "required",
+        "text": "*"
+      },
+      {
+        "text": "vpjygxzu.mailosaur.net is not an allowed domain for this organization."
+      },
+      {
+        "role": "checkbox",
+        "name": "Yes, I allow users from outside the permitted business domains to join via this invite. This override is recorded in the audit log.",
+        "testId": "allow-outside",
+        "states": [
+          "checked"
+        ]
+      },
+      {
+        "text": "Yes, I allow users from outside the permitted business domains to join via this invite. This override is recorded in the audit log."
+      }
+    ],
+    "endWaitMs": 12454,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "7a66666b9f344662d0a96071d9c601d1ff786731d998d858375b32bfdeaef2d4"
+    }
+  }
+}

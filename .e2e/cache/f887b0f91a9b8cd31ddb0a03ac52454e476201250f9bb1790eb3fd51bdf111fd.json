@@ -1,0 +1,129 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-20T12:08:48.127Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "type",
+        "summary": "type \"iam-e2e-mwox5sxn-shared@vpjygxzu.mailos…\" into textbox \"Search users\"",
+        "target": {
+          "role": "textbox",
+          "name": "Search users",
+          "testId": "strip-search",
+          "placeholder": "Search"
+        },
+        "value": "{{param:/email}}"
+      },
+      {
+        "name": "tap",
+        "summary": "tap cell \"E2E shared-mwox5sxn E2E shared-mwox5sxn\" in \"E2E shared-mwox5sxn\"",
+        "target": {
+          "role": "cell",
+          "name": "E2E shared-mwox5sxn E2E shared-mwox5sxn",
+          "within": "E2E shared-mwox5sxn"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Edit\" in \"User management\"",
+        "target": {
+          "role": "button",
+          "name": "Edit",
+          "testId": "user-edit",
+          "within": "User management"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/users-lifecycle.e2e.ts::IAM%20person%20lifecycle::account%20end%20date::an%20account%20end%20date%20shows%20on%20the%20person",
+      "targetId": "web",
+      "instructionDigest": "9c5e52300600fd8c54b9d8d83ca1612405c12fb7ed81700c340ba8c8d8845ae0",
+      "paramsDigest": "7112884177195e13665e56a453d5aafb0c1d41d6a459e1ee7fc4f9b315716f3b",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-haiku-5-5"
+    },
+    "summary": "Searched Users for iam-e2e-mwox5sxn-shared@vpjygxzu.mailosaur.net; one row matched (E2E shared-mwox5sxn, Active, Manual). Opened the profile drawer and clicked Edit; the edit form loaded with the email field, the Access details section (Permanent, expiry switch disabled) and Save changes disabled.",
+    "startPath": "/motadata/users",
+    "endPath": "/motadata/users",
+    "endAnchors": [
+      {
+        "role": "button",
+        "name": "Back to user details",
+        "testId": "drawer-back"
+      },
+      {
+        "role": "listitem",
+        "name": "User management"
+      },
+      {
+        "text": "Edit details"
+      },
+      {
+        "role": "button",
+        "name": "Upload photo",
+        "testId": "upload-photo"
+      },
+      {
+        "text": "Full Name"
+      },
+      {
+        "text": "Phone number"
+      },
+      {
+        "text": "+1"
+      },
+      {
+        "text": "United States, +1"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "MSP Wide View"
+      },
+      {
+        "name": "anything@vpjygxzu.mailosaur.net"
+      },
+      {
+        "role": "button",
+        "name": "Back to workspace"
+      },
+      {
+        "text": "Settings"
+      },
+      {
+        "role": "button",
+        "name": "Search"
+      },
+      {
+        "role": "textbox",
+        "name": "Search settings",
+        "placeholder": "Search settings"
+      },
+      {
+        "text": "⌘K"
+      },
+      {
+        "text": "People & Access"
+      }
+    ],
+    "endWaitMs": 11604,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "7a66666b9f344662d0a96071d9c601d1ff786731d998d858375b32bfdeaef2d4"
+    }
+  }
+}

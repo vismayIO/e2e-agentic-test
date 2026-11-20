@@ -1,0 +1,107 @@
+# Nightly AI QA — deployed frontend ko har raat test karta hai aur HTML report banata hai.
+#
+# Settings → Secrets and variables → Actions:
+#   Variables : APP_URL (zaroori), APP_NAME, AZURE_OPENAI_DEPLOYMENT
+#   Secrets   : model key (AZURE_API_KEY + AZURE_RESOURCE_NAME, ya ANTHROPIC_API_KEY / OPENAI_API_KEY)
+#               E2E_USER_QA_USERNAME / E2E_USER_QA_PASSWORD   (login wale tests ke liye, optional)
+#               BASIC_AUTH_USERNAME / BASIC_AUTH_PASSWORD     (staging basic auth ho to, optional)
+#               SLACK_WEBHOOK_URL / TEAMS_WEBHOOK_URL         (notification, optional)
+#               MAILOSAUR_API_KEY                             (IAM suite ka OTP; vars: IAM_ADMIN_EMAIL, MAILOSAUR_SERVER_ID)
+
+name: nightly-qa
+
+on:
+  schedule:
+    - cron: '17 20 * * *' # roz 20:17 UTC = 1:47 AM IST
+  workflow_dispatch:
+    inputs:
+      app_url:
+        description: 'Kisi aur URL pe chalana ho (khaali = vars.APP_URL)'
+        required: false
+      only:
+        description: 'Sirf ek hissa'
+        type: choice
+        options: [all, regression, explore]
+        default: all
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-qa
+  cancel-in-progress: false
+
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      E2E_TELEMETRY_DISABLED: '1'
+      APP_URL: ${{ inputs.app_url || vars.APP_URL }}
+      APP_NAME: ${{ vars.APP_NAME }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install browsers
+        run: npx e2e-web install chromium --with-deps
+
+      # Pichhli raaton ka history.json → report me trend
+      - name: Restore history
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .nightly-history
+          key: nightly-history-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: nightly-history-
+
+      - name: Run nightly QA
+        run: node scripts/nightly.ts ${{ (inputs.only && inputs.only != 'all') && format('--only {0}', inputs.only) || '' }}
+        env:
+          # --- Model (jo use karte ho bas wahi) ---
+          AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
+          AZURE_RESOURCE_NAME: ${{ secrets.AZURE_RESOURCE_NAME }}
+          AZURE_OPENAI_DEPLOYMENT: ${{ vars.AZURE_OPENAI_DEPLOYMENT }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+          # --- App login / staging protection (optional) ---
+          IAM_ADMIN_EMAIL: ${{ vars.IAM_ADMIN_EMAIL }}
+          MAILOSAUR_API_KEY: ${{ secrets.MAILOSAUR_API_KEY }}
+          MAILOSAUR_SERVER_ID: ${{ vars.MAILOSAUR_SERVER_ID }}
+          E2E_USER_QA_USERNAME: ${{ secrets.E2E_USER_QA_USERNAME }}
+          E2E_USER_QA_PASSWORD: ${{ secrets.E2E_USER_QA_PASSWORD }}
+          BASIC_AUTH_USERNAME: ${{ secrets.BASIC_AUTH_USERNAME }}
+          BASIC_AUTH_PASSWORD: ${{ secrets.BASIC_AUTH_PASSWORD }}
+          # --- Notification (optional) ---
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          NOTIFY_ON: always # ya: problems
+
+      - name: Save history
+        if: ${{ !cancelled() }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .nightly-history
+          key: nightly-history-${{ github.run_id }}-${{ github.run_attempt }}
+
+      # Download karke index.html kholo (raw/ folder saath me rehna chahiye)
+      - name: Upload report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: nightly-report-${{ github.run_number }}
+          path: nightly-report
+          if-no-files-found: warn
+          retention-days: 30

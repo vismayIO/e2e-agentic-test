@@ -1,0 +1,135 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-20T12:06:13.839Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Create service account\"",
+        "target": {
+          "role": "button",
+          "name": "Create service account",
+          "testId": "create-service-account"
+        }
+      },
+      {
+        "name": "type",
+        "summary": "type \"{{param:/name}}\" into textbox \"Service account namerequired\" in \"Create service account\"",
+        "target": {
+          "role": "textbox",
+          "name": "Service account namerequired",
+          "testId": "sa-name-input",
+          "placeholder": "Enter service account name",
+          "within": "Create service account"
+        },
+        "value": "{{param:/name}}"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"You can select more than one…\" in \"Create service account\"",
+        "target": {
+          "role": "button",
+          "name": "You can select more than one…",
+          "testId": "sa-roles-picker-trigger",
+          "within": "Create service account"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"End User\" in \"Account Manager\"",
+        "target": {
+          "role": "button",
+          "name": "End User",
+          "testId": "sa-roles-picker-popover-option-8",
+          "within": "Account Manager"
+        }
+      },
+      {
+        "name": "pressKey",
+        "summary": "press \"Escape\" on the focused field",
+        "key": "Escape"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Create service account\"",
+        "target": {
+          "role": "button",
+          "name": "Create service account",
+          "testId": "sa-form-submit"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/service-accounts.e2e.ts::IAM%20service%20accounts::owner%20and%20switch%20off%2Fon::deleting%20a%20service%20account%20needs%20the%20word%20delete",
+      "targetId": "web",
+      "instructionDigest": "97275aaaa51e917b1f560a030d9a770981daff82064bc50cdffa2c71d38b988d",
+      "paramsDigest": "fe0ec8977efb238a3e5162352b4795a58c1c48aba3db662213434916bb6b17cc",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-haiku-5-5"
+    },
+    "summary": "Created service account \"iam-e2e-mwoxg5lq-delete-gate\" with role End User, organization access \"motadata\", and the default owner (Test User, pre-selected). A success toast appeared and the row is listed in the table as Active with owner Test User and role End User.",
+    "startPath": "/motadata/service-accounts",
+    "endPath": "/motadata/service-accounts",
+    "endAnchors": [
+      {
+        "role": "image",
+        "name": "Bravo VerylongsurnamewithoutanyspacesVerylongsurnamewithoutanyspacesVerylongsurnamewithoutanyspacesV"
+      },
+      {
+        "text": "Bravo VerylongsurnamewithoutanyspacesVerylongsurnamewithoutanyspacesVerylongsurnamewithoutanyspacesV"
+      },
+      {
+        "role": "image",
+        "name": "vismay"
+      },
+      {
+        "text": "vismay"
+      },
+      {
+        "role": "image",
+        "name": "Test User"
+      },
+      {
+        "text": "Test User"
+      },
+      {
+        "role": "button",
+        "name": "Dismiss",
+        "testId": "toast-close"
+      },
+      {
+        "role": "row",
+        "name": "1 qa-pw-sa-1 Row actions Active 3 Bravo VerylongsurnamewithoutanyspacesVerylongsurnamewithoutanyspacesVerylongsurnamewithoutanyspacesV Bravo VerylongsurnamewithoutanyspacesVerylongsurnamewithoutanyspacesVerylongsurnamewithoutanyspacesV Read-Only Auditor 1"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "—",
+        "testId": "sa-owner"
+      },
+      {
+        "role": "cell",
+        "name": "—"
+      }
+    ],
+    "endWaitMs": 13728,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "5ae7cc732a4b791c08a64aa8c406f721358d25433b9ae6eb6b35f664311f71b6"
+    }
+  }
+}

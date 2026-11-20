@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-20T12:03:22.652Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "type",
+        "summary": "type \"not-an-email\" into textbox \"Work email\"",
+        "target": {
+          "role": "textbox",
+          "name": "Work email",
+          "placeholder": "you@company.com"
+        },
+        "value": "not-an-email"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Email me a sign-in code\"",
+        "target": {
+          "role": "button",
+          "name": "Email me a sign-in code"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/sign-in.e2e.ts::IAM%20sign-in::an%20invalid%20email%20is%20refused%20before%20any%20code%20is%20sent",
+      "targetId": "web",
+      "instructionDigest": "337e81db02201a280d0c8e2dc75adf646653681c5e07b1d6fb9e1481cdda303b",
+      "paramsDigest": "b1e02b46fc6e993ccac5e13c42c0630a7629708929abef23e413cb1c32337b78",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-haiku-5-5"
+    },
+    "summary": "Entered \"not-an-email\" in the Work email field and clicked \"Email me a sign-in code\". The form refused it with the inline error \"Please enter a valid email address\" and no code request was made; the page stayed on /login.",
+    "startPath": "/login",
+    "endPath": "/login",
+    "endAnchors": [
+      {
+        "role": "alert",
+        "name": "Please enter a valid email address"
+      },
+      {
+        "role": "image",
+        "name": "Motadata"
+      },
+      {
+        "role": "heading",
+        "name": "Sign in"
+      },
+      {
+        "text": "Enter your work email and we’ll send you a sign-in code."
+      },
+      {
+        "role": "button",
+        "name": "Continue with Google SSO"
+      },
+      {
+        "text": "or"
+      },
+      {
+        "text": "Work email"
+      },
+      {
+        "role": "textbox",
+        "name": "Work email",
+        "placeholder": "you@company.com",
+        "value": "not-an-email"
+      }
+    ],
+    "endWaitMs": 11679,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "1ece8fd98156ffa27301259ae40360c95b8cc471adc8df95a010ba31096fff15"
+    }
+  }
+}

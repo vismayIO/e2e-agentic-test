@@ -1,0 +1,115 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-20T12:00:38.784Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Save role\"",
+        "target": {
+          "role": "button",
+          "name": "Save role",
+          "testId": "builder-save"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Proceed\" in \"Save a role with no permissions?\"",
+        "target": {
+          "role": "button",
+          "name": "Proceed",
+          "testId": "confirm-submit",
+          "within": "Save a role with no permissions?"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/roles.e2e.ts::IAM%20roles::a%20new%20custom%20role%20is%20listed%20as%20Custom",
+      "targetId": "web",
+      "instructionDigest": "03656784f0cb9bb2e9babeed3bc8dd61df4bb38f5cfeb84d510fe4dbec78d50b",
+      "paramsDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-haiku-5-5"
+    },
+    "summary": "Clicked \"Save role\" on the permissions step, confirmed \"Save a role with no permissions?\" with Proceed. The app returned to /motadata/roles with a \"saved\" toast for \"iam-e2e-mwoxf9o0-release-engineer\". The saved role is listed as row 6 with type \"Custom\", 0 permissions, description \"Edits tickets o…",
+    "startPath": "/motadata/roles/new",
+    "endPath": "/motadata/roles",
+    "endAnchors": [
+      {
+        "role": "heading",
+        "name": "Roles"
+      },
+      {
+        "text": "Permission sets assigned to people and teams through access profiles."
+      },
+      {
+        "role": "button",
+        "name": "Create role",
+        "testId": "create-role"
+      },
+      {
+        "text": "Total roles"
+      },
+      {
+        "text": "10 built-in · 2 custom"
+      },
+      {
+        "text": "Assigned roles"
+      },
+      {
+        "text": "75% in use"
+      },
+      {
+        "text": "Unused roles"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "New role"
+      },
+      {
+        "text": "Details"
+      },
+      {
+        "role": "searchbox",
+        "name": "Search modules",
+        "testId": "module-search",
+        "placeholder": "Search modules"
+      },
+      {
+        "text": "Identity and access"
+      },
+      {
+        "text": "User"
+      },
+      {
+        "text": "Session"
+      },
+      {
+        "text": "Role"
+      },
+      {
+        "text": "Assignment"
+      }
+    ],
+    "endWaitMs": 15426,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "303140c0a1e77a3d69f096883d0e6b7233caab74a3fd3360a63c2d51f7811d02"
+    }
+  }
+}

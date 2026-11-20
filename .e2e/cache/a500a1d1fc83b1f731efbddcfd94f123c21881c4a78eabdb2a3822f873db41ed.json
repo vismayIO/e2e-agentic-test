@@ -1,0 +1,138 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-20T12:09:57.901Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Create service account\"",
+        "target": {
+          "role": "button",
+          "name": "Create service account",
+          "testId": "create-service-account"
+        }
+      },
+      {
+        "name": "type",
+        "summary": "type \"{{param:/name}}\" into textbox \"Service account namerequired\" in \"Create service account\"",
+        "target": {
+          "role": "textbox",
+          "name": "Service account namerequired",
+          "testId": "sa-name-input",
+          "placeholder": "Enter service account name",
+          "within": "Create service account"
+        },
+        "value": "{{param:/name}}"
+      },
+      {
+        "name": "tap",
+        "summary": "tap combobox \"Test User\" in \"Create service account\"",
+        "target": {
+          "role": "combobox",
+          "name": "Test User",
+          "testId": "sa-owner-trigger",
+          "within": "Create service account"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"{{param:/owner}}\"",
+        "target": {
+          "role": "button",
+          "name": "{{param:/owner}}",
+          "testId": "sa-owner-popover-option-157"
+        }
+      },
+      {
+        "name": "press",
+        "summary": "press \"Escape\" on searchbox \"Search members\" in \"{{param:/owner}}\"",
+        "target": {
+          "role": "searchbox",
+          "name": "Search members",
+          "testId": "sa-owner-popover-search",
+          "placeholder": "Search members",
+          "within": "{{param:/owner}}"
+        },
+        "key": "Escape"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"You can select more than one…\" in \"Create service account\"",
+        "target": {
+          "role": "button",
+          "name": "You can select more than one…",
+          "testId": "sa-roles-picker-trigger",
+          "within": "Create service account"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"End User\" in \"Account Manager\"",
+        "target": {
+          "role": "button",
+          "name": "End User",
+          "testId": "sa-roles-picker-popover-option-8",
+          "within": "Account Manager"
+        }
+      },
+      {
+        "name": "press",
+        "summary": "press \"Escape\" on searchbox \"Search roles\" in \"Account Manager\"",
+        "target": {
+          "role": "searchbox",
+          "name": "Search roles",
+          "testId": "sa-roles-picker-popover-search",
+          "placeholder": "Search roles",
+          "within": "Account Manager"
+        },
+        "key": "Escape"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Create service account\"",
+        "target": {
+          "role": "button",
+          "name": "Create service account",
+          "testId": "sa-form-submit"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/users-lifecycle.e2e.ts::IAM%20person%20lifecycle::service-account%20owner%20guard::an%20owner%20of%20an%20active%20service%20account%20cannot%20be%20disabled",
+      "targetId": "web",
+      "instructionDigest": "75f1c6e9721ce845c6e31d0288ca0ef1f5fe87679913f6639200e1294e6ae5c4",
+      "paramsDigest": "108d42d515206b3ac1470f9c9d71742bcb06c3111021c40061bab74ca6c645e4",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-haiku-5-5"
+    },
+    "summary": "Created service account \"e2e-sa-owner-mwox5sxn-bot\" with role End User, organization motadata, and owner \"E2E sa-owner-mwox5sxn\". A toast confirmed creation and the row appears as Active in the Service accounts table, though its Owner cell shows \"—\" rather than the selected owner.",
+    "startPath": "/motadata/service-accounts",
+    "endPath": "/motadata/service-accounts",
+    "endAnchors": [
+      {
+        "role": "button",
+        "name": "Dismiss",
+        "testId": "toast-close"
+      }
+    ],
+    "endWaitMs": 13406,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "7a66666b9f344662d0a96071d9c601d1ff786731d998d858375b32bfdeaef2d4"
+    }
+  }
+}

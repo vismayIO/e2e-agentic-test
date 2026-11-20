@@ -1,0 +1,163 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-20T12:30:52.980Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Create role\"",
+        "target": {
+          "role": "button",
+          "name": "Create role",
+          "testId": "create-role"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap textbox \"Role namerequired\"",
+        "target": {
+          "role": "textbox",
+          "name": "Role namerequired",
+          "testId": "builder-name",
+          "placeholder": "Enter role name"
+        }
+      },
+      {
+        "name": "type",
+        "summary": "type \"{{param:/name}}\" into textbox \"Role namerequired\"",
+        "target": {
+          "role": "textbox",
+          "name": "Role namerequired",
+          "testId": "builder-name",
+          "placeholder": "Enter role name"
+        },
+        "value": "{{param:/name}}"
+      },
+      {
+        "name": "type",
+        "summary": "type \"Temporary role for an e2e test\" into textbox \"Descriptionrequired\"",
+        "target": {
+          "role": "textbox",
+          "name": "Descriptionrequired",
+          "testId": "builder-description",
+          "placeholder": "Add a description about this role"
+        },
+        "value": "Temporary role for an e2e test"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Next\"",
+        "target": {
+          "role": "button",
+          "name": "Next",
+          "testId": "builder-next"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Save role\"",
+        "target": {
+          "role": "button",
+          "name": "Save role",
+          "testId": "builder-save"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Proceed\" in \"Save a role with no permissions?\"",
+        "target": {
+          "role": "button",
+          "name": "Proceed",
+          "testId": "confirm-submit",
+          "within": "Save a role with no permissions?"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/roles.e2e.ts::IAM%20roles::replacing%20a%20role%20with%20a%20new%20one%20keeps%20the%20old%20role%20until%20the%20new%20one%20is%20saved",
+      "targetId": "web",
+      "instructionDigest": "7eb428200a22bee5971eab616eafdcaf3e453c97aa8e416ef4fc212cc5e03e0f",
+      "paramsDigest": "0a07b150c40c459d63913a2de8b50d58a7a9fa2862490373de5ef033e1118d3b",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-sonnet-5-5"
+    },
+    "summary": "The role was created and saved. The Roles table lists \"iam-e2e-mwoygn6x-replace-me\" in row 7 with the description \"Temporary role for an e2e test\". It is Custom with 0 permissions, and the page shows 14 roles in total.",
+    "startPath": "/motadata/roles",
+    "endPath": "/motadata/roles",
+    "endAnchors": [
+      {
+        "text": "10 built-in · 4 custom"
+      },
+      {
+        "text": "64% in use"
+      },
+      {
+        "name": "1 person",
+        "text": "1"
+      },
+      {
+        "name": "0 teams",
+        "text": "0"
+      },
+      {
+        "name": "4 people",
+        "text": "4"
+      },
+      {
+        "name": "1 team",
+        "text": "1"
+      },
+      {
+        "name": "8 people",
+        "text": "8"
+      },
+      {
+        "name": "102 people",
+        "text": "102"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "Loading Total roles"
+      },
+      {
+        "text": "built-in and custom"
+      },
+      {
+        "text": "Loading Assigned roles"
+      },
+      {
+        "text": "in use"
+      },
+      {
+        "text": "Loading Unused roles"
+      },
+      {
+        "text": "Loading Privileged roles"
+      },
+      {
+        "role": "cell",
+        "name": "—"
+      }
+    ],
+    "endWaitMs": 10303,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "303140c0a1e77a3d69f096883d0e6b7233caab74a3fd3360a63c2d51f7811d02"
+    }
+  }
+}

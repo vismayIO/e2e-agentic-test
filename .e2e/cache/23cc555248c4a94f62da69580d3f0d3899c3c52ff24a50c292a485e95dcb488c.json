@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-20T12:31:25.442Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "type",
+        "summary": "type \"iam-e2e-mwoy2kdv-delete@vpjygxzu.mailos…\" into textbox \"Search users\"",
+        "target": {
+          "role": "textbox",
+          "name": "Search users",
+          "testId": "strip-search",
+          "placeholder": "Search"
+        },
+        "value": "{{param:/email}}"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Row actions\" in \"E2E delete-mwoy2kdv\"",
+        "target": {
+          "role": "button",
+          "name": "Row actions",
+          "testId": "row-actions-trigger",
+          "within": "E2E delete-mwoy2kdv"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap menuitem \"Delete user\"",
+        "target": {
+          "role": "menuitem",
+          "name": "Delete user",
+          "testId": "row-actions-menu-delete"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Disable and continue\" in \"Disable E2E delete-mwoy2kdv\"",
+        "target": {
+          "role": "button",
+          "name": "Disable and continue",
+          "testId": "confirm-submit",
+          "within": "Disable E2E delete-mwoy2kdv"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/users-lifecycle.e2e.ts::IAM%20person%20lifecycle::a%20deleted%20person::delete%20stays%20locked%20until%20the%20word%20delete%20is%20typed",
+      "targetId": "web",
+      "instructionDigest": "6386e16bcf9fac49344fd05f6c4c3fd89f0acf56c52fec27af0b7eb6273ea1e2",
+      "paramsDigest": "7112884177195e13665e56a453d5aafb0c1d41d6a459e1ee7fc4f9b315716f3b",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-sonnet-5-5"
+    },
+    "summary": "Searched for iam-e2e-mwoy2kdv-delete@..., chose Delete user, then Disable and continue. The user was disabled (toast shown). The \"Delete E2E delete-mwoy2kdv\" dialog is now open with the \"delete\" confirm word field empty and the Delete button disabled.",
+    "startPath": "/motadata/users",
+    "endPath": "/motadata/users",
+    "endAnchors": [
+      {
+        "role": "button",
+        "name": "Dismiss",
+        "testId": "toast-close"
+      },
+      {
+        "text": "Type \"delete\" to confirm"
+      },
+      {
+        "role": "textbox",
+        "name": "Type \"delete\" to confirm",
+        "testId": "confirm-word"
+      },
+      {
+        "text": "Confirm stays disabled until you type delete."
+      },
+      {
+        "role": "button",
+        "name": "Cancel",
+        "testId": "confirm-cancel"
+      },
+      {
+        "role": "button",
+        "name": "Delete",
+        "testId": "confirm-submit"
+      },
+      {
+        "text": "Close"
+      },
+      {
+        "testId": "form-row"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "MSP Wide View"
+      },
+      {
+        "name": "anything@vpjygxzu.mailosaur.net"
+      },
+      {
+        "role": "button",
+        "name": "Back to workspace"
+      },
+      {
+        "text": "Settings"
+      },
+      {
+        "role": "button",
+        "name": "Search"
+      },
+      {
+        "role": "textbox",
+        "name": "Search settings",
+        "placeholder": "Search settings"
+      },
+      {
+        "text": "⌘K"
+      },
+      {
+        "text": "People & Access"
+      }
+    ],
+    "endWaitMs": 14466,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "7a66666b9f344662d0a96071d9c601d1ff786731d998d858375b32bfdeaef2d4"
+    }
+  }
+}

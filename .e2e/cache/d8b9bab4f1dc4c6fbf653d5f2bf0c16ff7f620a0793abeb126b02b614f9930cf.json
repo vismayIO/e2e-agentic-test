@@ -1,0 +1,134 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-20T12:00:38.783Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "type",
+        "summary": "type \"{{param:/name}}\" into textbox \"Role namerequired\"",
+        "target": {
+          "role": "textbox",
+          "name": "Role namerequired",
+          "testId": "builder-name",
+          "placeholder": "Enter role name"
+        },
+        "value": "{{param:/name}}"
+      },
+      {
+        "name": "type",
+        "summary": "type \"Edits tickets owned by the person’s tea…\" into textbox \"Descriptionrequired\"",
+        "target": {
+          "role": "textbox",
+          "name": "Descriptionrequired",
+          "testId": "builder-description",
+          "placeholder": "Add a description about this role"
+        },
+        "value": "Edits tickets owned by the person’s teams"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Next\"",
+        "target": {
+          "role": "button",
+          "name": "Next",
+          "testId": "builder-next"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/roles.e2e.ts::IAM%20roles::a%20new%20custom%20role%20is%20listed%20as%20Custom",
+      "targetId": "web",
+      "instructionDigest": "b290843df620c9ba5bc2fd200dd7bc8de86295edab020c1a00f5d28198c62906",
+      "paramsDigest": "be0e2afdea225a28593f3bd5553d47a5e938eb1a40ed1341e1899638b050a85b",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-haiku-5-5"
+    },
+    "summary": "Entered Role name \"iam-e2e-mwoxf9o0-release-engineer\" and Description \"Edits tickets owned by the person’s teams\" on the Details step, then clicked Next. The builder advanced to the Permissions step (module rail and capability checkboxes shown); the footer now shows \"Save role\". The role is not yet…",
+    "startPath": "/motadata/roles/new",
+    "endPath": "/motadata/roles/new",
+    "endAnchors": [
+      {
+        "role": "searchbox",
+        "name": "Search modules",
+        "testId": "module-search",
+        "placeholder": "Search modules"
+      },
+      {
+        "text": "Identity and access"
+      },
+      {
+        "text": "User"
+      },
+      {
+        "text": "Session"
+      },
+      {
+        "text": "Role"
+      },
+      {
+        "text": "Assignment"
+      },
+      {
+        "text": "Access Profile"
+      },
+      {
+        "text": "Team"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "name": "required",
+        "text": "*"
+      },
+      {
+        "role": "textbox",
+        "name": "Role namerequired",
+        "testId": "builder-name",
+        "placeholder": "Enter role name"
+      },
+      {
+        "text": "Unique across the tenant"
+      },
+      {
+        "role": "textbox",
+        "name": "Descriptionrequired",
+        "testId": "builder-description",
+        "placeholder": "Add a description about this role"
+      },
+      {
+        "text": "Organization"
+      },
+      {
+        "text": "MSP owner organization",
+        "testId": "invite-org-name"
+      },
+      {
+        "text": "Roles belong to the active frame. Switch to a client frame to author a client role."
+      },
+      {
+        "role": "button",
+        "name": "Next",
+        "testId": "builder-next"
+      }
+    ],
+    "endWaitMs": 11718,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "303140c0a1e77a3d69f096883d0e6b7233caab74a3fd3360a63c2d51f7811d02"
+    }
+  }
+}

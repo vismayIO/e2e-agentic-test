@@ -1,0 +1,16 @@
+node_modules/
+.env
+
+# e2e outputs — lekin replay cache commit karo (agent.act steps bina model call ke replay)
+.e2e/*
+!.e2e/cache/
+
+# Nightly outputs (CI artifact ban ke jaate hain)
+nightly-report/
+.nightly-history/
+
+# IAM import tests ki generated CSVs
+tmp/
+
+# Saved logins (tokens) — kabhi commit mat karo
+.auth/

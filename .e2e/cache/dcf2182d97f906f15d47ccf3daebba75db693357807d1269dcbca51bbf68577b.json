@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-20T12:00:37.483Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "type",
+        "summary": "type \"raj samani\" into textbox \"Search users\"",
+        "target": {
+          "role": "textbox",
+          "name": "Search users",
+          "testId": "strip-search",
+          "placeholder": "Search"
+        },
+        "value": "raj samani"
+      },
+      {
+        "name": "tap",
+        "summary": "tap cell \"raj samani raj samani\" in \"raj samani\"",
+        "target": {
+          "role": "cell",
+          "name": "raj samani raj samani",
+          "within": "raj samani"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap tab \"Access profiles\" in \"User management\"",
+        "target": {
+          "role": "tab",
+          "name": "Access profiles",
+          "testId": "tab-access",
+          "within": "User management"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"iam-e2e-mwox5sxn-team through qa-pw-tea…\" in \"iam-e2e-mwox5sxn-team\"",
+        "target": {
+          "role": "button",
+          "name": "iam-e2e-mwox5sxn-team through qa-pw-team • Permanent Active",
+          "within": "iam-e2e-mwox5sxn-team"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/access-profiles.e2e.ts::IAM%20access%20profiles::a%20team%E2%80%99s%20profile%20shows%20read-only%20on%20a%20member%E2%80%99s%20profile",
+      "targetId": "web",
+      "instructionDigest": "8348a66a86abab7692c95180f1d6f6146da8dc79b8d3af5ec7c14d0bc18b4f5d",
+      "paramsDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-haiku-5-5"
+    },
+    "summary": "Opened raj samani's profile from Users (drawer, Access profiles tab selected). The tab lists assignments, including iam-e2e-mwox5sxn-team via qa-pw-team (Permanent, Active). Expanding that row shows its details (Roles Approver, Org access motadata, Ends Permanent, Assigned by Test User). The step's…",
+    "startPath": "/motadata/users",
+    "endPath": "/motadata/users",
+    "endAnchors": [
+      {
+        "text": "User management"
+      },
+      {
+        "role": "image",
+        "name": "raj samani",
+        "text": "R",
+        "testId": "avatar"
+      },
+      {
+        "text": "raj samani",
+        "testId": "user-name"
+      },
+      {
+        "text": "vismay.chovatiya+invite-test@motadata.com"
+      },
+      {
+        "role": "button",
+        "name": "Edit",
+        "testId": "user-edit"
+      },
+      {
+        "role": "button",
+        "name": "More actions",
+        "testId": "row-actions-trigger"
+      },
+      {
+        "text": "Phone number"
+      },
+      {
+        "text": "-",
+        "testId": "about-phone"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "MSP Wide View"
+      },
+      {
+        "name": "anything@vpjygxzu.mailosaur.net"
+      },
+      {
+        "role": "button",
+        "name": "Back to workspace"
+      },
+      {
+        "text": "Settings"
+      },
+      {
+        "role": "button",
+        "name": "Search"
+      },
+      {
+        "role": "textbox",
+        "name": "Search settings",
+        "placeholder": "Search settings"
+      },
+      {
+        "text": "⌘K"
+      },
+      {
+        "text": "People & Access"
+      }
+    ],
+    "endWaitMs": 11724,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "7a66666b9f344662d0a96071d9c601d1ff786731d998d858375b32bfdeaef2d4"
+    }
+  }
+}

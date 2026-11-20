@@ -1,0 +1,115 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-20T12:34:31.822Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap node \"{{param:/name}}\" in \"17\"",
+        "target": {
+          "text": "{{param:/name}}",
+          "testId": "ap-name-32",
+          "within": "17"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap tab \"Teams\" in \"Access profiles\"",
+        "target": {
+          "role": "tab",
+          "name": "Teams",
+          "testId": "tab-teams",
+          "within": "Access profiles"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Add teams\" in \"Teams\"",
+        "target": {
+          "role": "button",
+          "name": "Add teams",
+          "testId": "add-teams",
+          "within": "Teams"
+        }
+      },
+      {
+        "name": "check",
+        "summary": "check checkbox \"qa-pw-team\"",
+        "target": {
+          "role": "checkbox",
+          "name": "qa-pw-team"
+        },
+        "checked": true
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Next\" in \"Access profiles\"",
+        "target": {
+          "role": "button",
+          "name": "Next",
+          "testId": "add-holders-next",
+          "within": "Access profiles"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Assign 1 team\" in \"Access profiles\"",
+        "target": {
+          "role": "button",
+          "name": "Assign 1 team",
+          "testId": "add-holders-submit",
+          "within": "Access profiles"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Close\" in \"Access profiles\"",
+        "target": {
+          "role": "button",
+          "name": "Close",
+          "within": "Access profiles"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/access-profiles.e2e.ts::IAM%20access%20profiles::deleting%20a%20held%20profile%20shows%20who%20holds%20it",
+      "targetId": "web",
+      "instructionDigest": "47a718ec92f4fd63906ee3e1b2b82b4e2dd6b0dd617d307c806aeabad137f241",
+      "paramsDigest": "751457cfb4fe3ea5fd59628419e7be2297569589dc3c7b028c5783c4be8f2f4d",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-sonnet-5-5"
+    },
+    "summary": "Assigned iam-e2e-mwoyeokw-held to team qa-pw-team with no expiry (shown as \"Team · Permanent\", Active). A toast said \"1 holder now has iam-e2e-mwoyeokw-held\". I closed the drawer, and the table row 17 now shows holders \"1 team\".",
+    "startPath": "/motadata/access-profiles",
+    "endPath": "/motadata/access-profiles",
+    "endAnchors": [
+      {
+        "role": "button",
+        "name": "Dismiss",
+        "testId": "toast-close"
+      },
+      {
+        "testId": "page-docked-actions"
+      }
+    ],
+    "endWaitMs": 12428,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "7a66666b9f344662d0a96071d9c601d1ff786731d998d858375b32bfdeaef2d4"
+    }
+  }
+}

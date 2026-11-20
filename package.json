@@ -1,0 +1,32 @@
+{
+  "name": "nightly-qa",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "e2e run",
+    "nightly": "node scripts/nightly.ts",
+    "explore": "e2e explore",
+    "report": "node scripts/nightly.ts --report-only",
+    "typecheck": "tsc -p ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@ai-sdk/anthropic": "4.0.106",
+    "@ai-sdk/azure": "4.0.129",
+    "@ai-sdk/openai": "4.0.121",
+    "@e2e-dev/html-reporter": "0.0.2",
+    "@e2e-dev/web": "0.16.1",
+    "@types/node": "26.6.6",
+    "ai": "7.0.177",
+    "e2e": "0.24.0",
+    "typescript": "7.0.2"
+  },
+  "engines": {
+    "node": ">=22.18"
+  }
+}

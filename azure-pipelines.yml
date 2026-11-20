@@ -1,0 +1,148 @@
+# Nightly AI QA — Azure DevOps
+#
+# Setup (ek baar):
+#   1. Pipelines → Library → variable group "nightly-qa" banao:
+#        APP_URL (zaroori), APP_NAME
+#        Model : AZURE_API_KEY 🔒, AZURE_RESOURCE_NAME, AZURE_OPENAI_DEPLOYMENT
+#                (ya ANTHROPIC_API_KEY 🔒 / OPENAI_API_KEY 🔒)
+#        Login : E2E_USER_QA_USERNAME, E2E_USER_QA_PASSWORD 🔒            (optional)
+#        Staging basic auth: BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD 🔒   (optional)
+#        Notify: TEAMS_WEBHOOK_URL 🔒 / SLACK_WEBHOOK_URL 🔒               (optional)
+#        IAM   : IAM_ADMIN_EMAIL, MAILOSAUR_SERVER_ID, MAILOSAUR_API_KEY 🔒 (IAM suite ka OTP)
+#   2. Pehle run pe variable group ko pipeline ke liye "Permit" karo.
+#   3. Project settings → Pipelines → Settings me "Limit job authorization scope" ON ho
+#      aur history download fail ho, to pipeline ke build service ko isi pipeline ka Read access do.
+
+trigger: none
+pr: none
+
+schedules:
+  - cron: '17 20 * * *' # roz 20:17 UTC = 1:47 AM IST
+    displayName: Nightly QA
+    branches:
+      include: [main]
+    always: true # code na badle tab bhi chalao — app to roz deploy hota hai
+
+parameters:
+  - name: appUrl
+    displayName: 'Kisi aur URL pe chalana ho (khaali = variable group ka APP_URL)'
+    type: string
+    default: ' '
+  - name: only
+    displayName: Sirf ek hissa
+    type: string
+    default: all
+    values: [all, regression, explore]
+
+variables:
+  - group: nightly-qa
+  # Azure khud CI=true set nahi karta — e2e ke CI defaults (read-only cache, test.only block) ke liye zaroori
+  - name: CI
+    value: 'true'
+  - name: E2E_TELEMETRY_DISABLED
+    value: '1'
+  - name: npm_config_cache
+    value: $(Pipeline.Workspace)/.npm
+  - name: PLAYWRIGHT_BROWSERS_PATH
+    value: $(Pipeline.Workspace)/ms-playwright
+
+pool:
+  vmImage: ubuntu-latest
+
+jobs:
+  - job: nightly
+    displayName: Nightly QA
+    timeoutInMinutes: 90
+    steps:
+      - checkout: self
+        fetchDepth: 1
+
+      - task: NodeTool@0
+        displayName: Use Node 24
+        inputs:
+          versionSpec: '24.x'
+
+      - task: Cache@2
+        displayName: Cache npm
+        inputs:
+          key: 'npm | "$(Agent.OS)" | package-lock.json'
+          restoreKeys: |
+            npm | "$(Agent.OS)"
+          path: $(npm_config_cache)
+
+      - script: npm ci
+        displayName: npm ci
+
+      - task: Cache@2
+        displayName: Cache Playwright browsers
+        inputs:
+          key: 'playwright | "$(Agent.OS)" | package-lock.json'
+          path: $(PLAYWRIGHT_BROWSERS_PATH)
+
+      - script: npx e2e-web install chromium --with-deps
+        displayName: Install browsers
+
+      # Trend ke liye pichhle run ka history.json (pehli raat nahi milega — theek hai)
+      - task: DownloadPipelineArtifact@2
+        displayName: Restore history
+        continueOnError: true
+        inputs:
+          source: specific
+          project: $(System.TeamProjectId)
+          pipeline: $(System.DefinitionId)
+          runVersion: latest
+          allowFailedBuilds: true
+          allowPartiallySucceededBuilds: true
+          artifact: nightly-history
+          path: $(Build.SourcesDirectory)/.nightly-history
+
+      - script: |
+          ARGS=""
+          if [ "${{ parameters.only }}" != "all" ]; then ARGS="--only ${{ parameters.only }}"; fi
+          node scripts/nightly.ts $ARGS
+        displayName: Run nightly QA
+        env:
+          # Secret variables env me apne aap nahi aate — yahan map karna padta hai.
+          # Jo variable group me nahi hai woh literal "$(NAME)" rahega; config use ignore karta hai.
+          APP_URL: ${{ coalesce(trim(parameters.appUrl), '$(APP_URL)') }}
+          APP_NAME: $(APP_NAME)
+          AZURE_API_KEY: $(AZURE_API_KEY)
+          AZURE_RESOURCE_NAME: $(AZURE_RESOURCE_NAME)
+          AZURE_OPENAI_DEPLOYMENT: $(AZURE_OPENAI_DEPLOYMENT)
+          ANTHROPIC_API_KEY: $(ANTHROPIC_API_KEY)
+          OPENAI_API_KEY: $(OPENAI_API_KEY)
+          IAM_ADMIN_EMAIL: $(IAM_ADMIN_EMAIL)
+          MAILOSAUR_API_KEY: $(MAILOSAUR_API_KEY)
+          MAILOSAUR_SERVER_ID: $(MAILOSAUR_SERVER_ID)
+          E2E_USER_QA_USERNAME: $(E2E_USER_QA_USERNAME)
+          E2E_USER_QA_PASSWORD: $(E2E_USER_QA_PASSWORD)
+          BASIC_AUTH_USERNAME: $(BASIC_AUTH_USERNAME)
+          BASIC_AUTH_PASSWORD: $(BASIC_AUTH_PASSWORD)
+          TEAMS_WEBHOOK_URL: $(TEAMS_WEBHOOK_URL)
+          SLACK_WEBHOOK_URL: $(SLACK_WEBHOOK_URL)
+          NOTIFY_ON: always # ya: problems
+
+      # Tests tab me regression ke pass/fail
+      - task: PublishTestResults@2
+        displayName: Publish test results
+        condition: succeededOrFailed()
+        inputs:
+          testResultsFormat: JUnit
+          testResultsFiles: .e2e/nightly/regression/junit.xml
+          testRunTitle: Nightly regression
+          failTaskOnMissingResultsFile: false
+
+      - task: PublishPipelineArtifact@1
+        displayName: Upload history
+        condition: succeededOrFailed()
+        inputs:
+          targetPath: .nightly-history
+          artifact: nightly-history
+
+      # Artifacts → nightly-report download karo → index.html kholo
+      - task: PublishPipelineArtifact@1
+        displayName: Upload report
+        condition: succeededOrFailed()
+        inputs:
+          targetPath: nightly-report
+          artifact: nightly-report

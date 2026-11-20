@@ -1,0 +1,157 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-20T12:04:37.417Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Edit\" in \"Access profiles\"",
+        "target": {
+          "role": "button",
+          "name": "Edit",
+          "testId": "edit-profile",
+          "within": "Access profiles"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap node \"profile-roles\" in \"Access profiles\"",
+        "target": {
+          "testId": "profile-roles",
+          "within": "Access profiles"
+        }
+      },
+      {
+        "name": "tapAt",
+        "summary": "tap the point (1235, 263) on button \"Approver\" in \"Access profiles\"",
+        "point": {
+          "x": 1235,
+          "y": 263
+        },
+        "viewport": {
+          "width": 1280,
+          "height": 720
+        },
+        "within": {
+          "target": {
+            "role": "button",
+            "name": "Approver",
+            "testId": "profile-roles-trigger",
+            "within": "Access profiles"
+          },
+          "fx": 0.9632,
+          "fy": 0.5
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Technician\" in \"Account Manager\"",
+        "target": {
+          "role": "button",
+          "name": "Technician",
+          "testId": "profile-roles-popover-option-3",
+          "within": "Account Manager"
+        }
+      },
+      {
+        "name": "pressKey",
+        "summary": "press \"Escape\" on the focused field",
+        "key": "Escape"
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/access-profiles.e2e.ts::IAM%20access%20profiles::editing%20a%20held%20profile%20shows%20how%20many%20people%20it%20affects%20before%20saving",
+      "targetId": "web",
+      "instructionDigest": "f95559a2b367c63b4caa742e040647a08772e7bbd8de84a5b2efe9bcc70d9d8b",
+      "paramsDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-haiku-5-5"
+    },
+    "summary": "Clicked Edit on iam-e2e-mwox5sxn-edit, opened the roles dropdown and selected Technician. The form now shows Approver plus +1 (Technician) in the roles field, unsaved; Save changes not yet clicked. The impact count before saving was not shown in this step.",
+    "startPath": "/motadata/access-profiles",
+    "endPath": "/motadata/access-profiles",
+    "endAnchors": [
+      {
+        "role": "button",
+        "name": "Back to the access profile",
+        "testId": "drawer-back"
+      },
+      {
+        "role": "listitem",
+        "name": "Access profiles"
+      },
+      {
+        "text": "Edit access profile"
+      },
+      {
+        "text": "Change the name, the roles or the reach. Everyone who holds it sees the change; each holder keeps their own end."
+      },
+      {
+        "name": "required",
+        "text": "*"
+      },
+      {
+        "role": "button",
+        "name": "Approver Technician",
+        "testId": "profile-roles-trigger"
+      },
+      {
+        "text": "Approver"
+      },
+      {
+        "role": "button",
+        "name": "Remove Approver"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "Access profiles"
+      },
+      {
+        "text": "Active",
+        "testId": "profile-status"
+      },
+      {
+        "text": "qa-pw-team"
+      },
+      {
+        "text": "Team"
+      },
+      {
+        "text": "Created by Test User"
+      },
+      {
+        "role": "button",
+        "name": "Edit",
+        "testId": "edit-profile"
+      },
+      {
+        "role": "button",
+        "name": "Access profile actions",
+        "testId": "row-actions-trigger"
+      },
+      {
+        "text": "Details"
+      }
+    ],
+    "endWaitMs": 11861,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "7a66666b9f344662d0a96071d9c601d1ff786731d998d858375b32bfdeaef2d4"
+    }
+  }
+}

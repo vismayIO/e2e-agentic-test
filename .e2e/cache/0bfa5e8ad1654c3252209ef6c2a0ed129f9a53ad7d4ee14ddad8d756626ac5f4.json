@@ -1,0 +1,144 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-20T12:29:29.380Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "type",
+        "summary": "type \"iam-e2e-mwoy2kdv-bulk-b@vpjygxzu.mailos…\" into textbox \"Search users\"",
+        "target": {
+          "role": "textbox",
+          "name": "Search users",
+          "testId": "strip-search",
+          "placeholder": "Search"
+        },
+        "value": "{{param:/email}}"
+      },
+      {
+        "name": "press",
+        "summary": "press \"Enter\" on textbox \"Search users\"",
+        "target": {
+          "role": "textbox",
+          "name": "Search users",
+          "testId": "strip-search",
+          "placeholder": "Search"
+        },
+        "key": "Enter"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Row actions\" in \"E2E bulk-b-mwoy2kdv\"",
+        "target": {
+          "role": "button",
+          "name": "Row actions",
+          "testId": "row-actions-trigger",
+          "within": "E2E bulk-b-mwoy2kdv"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap menuitem \"Disable user\"",
+        "target": {
+          "role": "menuitem",
+          "name": "Disable user",
+          "testId": "row-actions-menu-disable"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Disable\" in \"Disable E2E bulk-b-mwoy2kdv\"",
+        "target": {
+          "role": "button",
+          "name": "Disable",
+          "testId": "confirm-submit",
+          "within": "Disable E2E bulk-b-mwoy2kdv"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/users-lifecycle.e2e.ts::IAM%20person%20lifecycle::disable%2C%20enable%2C%20delete::a%20bulk%20delete%20reports%20an%20outcome%20for%20every%20selected%20person",
+      "targetId": "web",
+      "instructionDigest": "20ea843a60aa91110dc5297a88ebfbafa1ea260a83cb1d1821e280031e9c145e",
+      "paramsDigest": "7112884177195e13665e56a453d5aafb0c1d41d6a459e1ee7fc4f9b315716f3b",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-sonnet-5-5"
+    },
+    "summary": "I searched for iam-e2e-mwoy2kdv-bulk-b@vpjygxzu.mailosaur.net and disabled the user from Row actions > Disable user, then confirmed. The row now shows status \"Inactive\", and a toast reads \"E2E bulk-b-mwoy2kdv disabled\".",
+    "startPath": "/motadata/users",
+    "endPath": "/motadata/users",
+    "endAnchors": [
+      {
+        "text": "96% of total"
+      },
+      {
+        "text": "Inactive",
+        "testId": "badge-label"
+      },
+      {
+        "text": "of 1"
+      },
+      {
+        "role": "button",
+        "name": "Dismiss",
+        "testId": "toast-close"
+      },
+      {
+        "role": "cell",
+        "name": "Inactive"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "97% of total"
+      },
+      {
+        "role": "textbox",
+        "name": "Search users",
+        "testId": "strip-search",
+        "placeholder": "Search"
+      },
+      {
+        "text": "Invited",
+        "testId": "badge-label"
+      },
+      {
+        "text": "Active",
+        "testId": "badge-label"
+      },
+      {
+        "text": "Client Operator",
+        "testId": "badge-label"
+      },
+      {
+        "role": "button",
+        "name": "2 more: Client Technician, End User"
+      },
+      {
+        "role": "image",
+        "name": "Test User"
+      },
+      {
+        "name": "Test User"
+      }
+    ],
+    "endWaitMs": 14936,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "7a66666b9f344662d0a96071d9c601d1ff786731d998d858375b32bfdeaef2d4"
+    }
+  }
+}
