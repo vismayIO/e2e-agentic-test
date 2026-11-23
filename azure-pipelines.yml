@@ -1,14 +1,14 @@
-# Nightly AI QA — Azure DevOps
+# Motadata console ka AI QA — Azure DevOps. Har raat poori pipeline, aur haath se koi bhi suite (docs/testing.md).
 #
 # Setup (ek baar):
 #   1. Pipelines → Library → variable group "nightly-qa" banao:
 #        APP_URL (zaroori), APP_NAME
 #        Model : AZURE_API_KEY 🔒, AZURE_RESOURCE_NAME, AZURE_OPENAI_DEPLOYMENT
 #                (ya ANTHROPIC_API_KEY 🔒 / OPENAI_API_KEY 🔒)
-#        Login : E2E_USER_QA_USERNAME, E2E_USER_QA_PASSWORD 🔒            (optional)
+#        Login : APP_ADMIN_EMAIL, MAILOSAUR_SERVER_ID, MAILOSAUR_API_KEY 🔒 (teeno zaroori: console admin ka sign-in code —
+#                inke bina admin setup fail, run red)
 #        Staging basic auth: BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD 🔒   (optional)
 #        Notify: TEAMS_WEBHOOK_URL 🔒 / SLACK_WEBHOOK_URL 🔒               (optional)
-#        Login : APP_ADMIN_EMAIL, MAILOSAUR_SERVER_ID, MAILOSAUR_API_KEY 🔒 (console admin ka OTP, sab modules)
 #   2. Pehle run pe variable group ko pipeline ke liye "Permit" karo.
 #   3. Project settings → Pipelines → Settings me "Limit job authorization scope" ON ho
 #      aur history download fail ho, to pipeline ke build service ko isi pipeline ka Read access do.
@@ -23,16 +23,23 @@ schedules:
       include: [main]
     always: true # code na badle tab bhi chalao — app to roz deploy hota hai
 
+# Schedule pe defaults chalte hain: suite nightly, sab modules.
 parameters:
+  - name: suite
+    displayName: 'Kya chalana hai (nightly = poori pipeline)'
+    type: string
+    default: nightly
+    # lib/suites.ts ke RUNNABLE, `retest` ke bina: use pichhle run ka report.json
+    # usi machine pe chahiye (naye agent pe nahi hota) — CI me failed job dobara chalao.
+    values: [nightly, smoke, sanity, regression, bugs, explore, monkey]
+  - name: module
+    displayName: 'Module, jaise iam (khaali = sab). nightly hamesha sab modules chalata hai.'
+    type: string
+    default: ' '
   - name: appUrl
     displayName: 'Kisi aur URL pe chalana ho (khaali = variable group ka APP_URL)'
     type: string
     default: ' '
-  - name: only
-    displayName: Sirf ek hissa
-    type: string
-    default: all
-    values: [all, regression, explore]
 
 variables:
   - group: nightly-qa
@@ -50,9 +57,11 @@ pool:
   vmImage: ubuntu-latest
 
 jobs:
-  - job: nightly
-    displayName: Nightly QA
-    timeoutInMinutes: 90
+  - job: qa
+    displayName: QA — ${{ parameters.suite }}
+    # Nightly ki stages ki apni time limits hain (nightly.config.ts: smoke 10 + regression 45 + 6 charters × 8 = 103 min);
+    # job ka timeout unke jod + install se upar — CI job ko maare to report nahi banti.
+    timeoutInMinutes: 130
     steps:
       - checkout: self
         fetchDepth: 1
@@ -73,6 +82,15 @@ jobs:
       - script: npm ci
         displayName: npm ci
 
+      # Typecheck + verify (tags, brief coverage, charters): app nahi khulta, model call nahi, koi secret nahi
+      # (sirf APP_URL aur MAILOSAUR_SERVER_ID, jo tests collect hote waqt padhe jaate hain).
+      # Galat tag ya charter yahin pakdo, raat ke run ke beech me nahi.
+      - script: npm test
+        displayName: npm test
+        env:
+          APP_URL: ${{ coalesce(trim(parameters.appUrl), '$(APP_URL)') }}
+          MAILOSAUR_SERVER_ID: $(MAILOSAUR_SERVER_ID)
+
       - task: Cache@2
         displayName: Cache Playwright browsers
         inputs:
@@ -82,26 +100,39 @@ jobs:
       - script: npx e2e-web install chromium --with-deps
         displayName: Install browsers
 
-      # Trend ke liye pichhle run ka history.json (pehli raat nahi milega — theek hai)
-      - task: DownloadPipelineArtifact@2
-        displayName: Restore history
-        continueOnError: true
-        inputs:
-          source: specific
-          project: $(System.TeamProjectId)
-          pipeline: $(System.DefinitionId)
-          runVersion: latest
-          allowFailedBuilds: true
-          allowPartiallySucceededBuilds: true
-          artifact: nightly-history
-          path: $(Build.SourcesDirectory)/.nightly-history
+      - ${{ if eq(parameters.suite, 'nightly') }}:
+          # History sirf nightly runs me hoti hai. Tag se agli raat "pichhla nightly run" milta hai,
+          # beech me haath se chalaya smoke/sanity run nahi.
+          - script: echo "##vso[build.addbuildtag]nightly"
+            displayName: Tag run as nightly
 
+          # Trend ke liye pichhle nightly run ka history.json (pehli raat nahi milega — theek hai)
+          - task: DownloadPipelineArtifact@2
+            displayName: Restore history
+            continueOnError: true
+            inputs:
+              source: specific
+              project: $(System.TeamProjectId)
+              pipeline: $(System.DefinitionId)
+              runVersion: latest
+              tags: nightly
+              allowFailedBuilds: true
+              allowPartiallySucceededBuilds: true
+              artifact: nightly-history
+              path: $(Build.SourcesDirectory)/.nightly-history
+
+      # SUITE / MODULE env se aate hain (parameter seedha script me nahi). MODULE bina quotes ke:
+      # khaali = sab modules, "iam tickets" = do.
       - script: |
-          ARGS=""
-          if [ "${{ parameters.only }}" != "all" ]; then ARGS="--only ${{ parameters.only }}"; fi
-          node scripts/nightly.ts $ARGS
-        displayName: Run nightly QA
+          if [ "$SUITE" = nightly ]; then
+            node scripts/nightly.ts
+          else
+            node scripts/suite.ts "$SUITE" $MODULE
+          fi
+        displayName: Run ${{ parameters.suite }}
         env:
+          SUITE: ${{ parameters.suite }}
+          MODULE: ${{ parameters.module }}
           # Secret variables env me apne aap nahi aate — yahan map karna padta hai.
           # Jo variable group me nahi hai woh literal "$(NAME)" rahega; config use ignore karta hai.
           APP_URL: ${{ coalesce(trim(parameters.appUrl), '$(APP_URL)') }}
@@ -112,37 +143,63 @@ jobs:
           ANTHROPIC_API_KEY: $(ANTHROPIC_API_KEY)
           OPENAI_API_KEY: $(OPENAI_API_KEY)
           APP_ADMIN_EMAIL: $(APP_ADMIN_EMAIL)
+          APP_ADMIN_NAME: $(APP_ADMIN_NAME)
           MAILOSAUR_API_KEY: $(MAILOSAUR_API_KEY)
+          # Optional (README → IAM): na hon to sirf woh tests skip
+          IAM_SCIM_USER_EMAIL: $(IAM_SCIM_USER_EMAIL)
+          IAM_TEAM: $(IAM_TEAM)
+          IAM_TEAM_MEMBER_EMAIL: $(IAM_TEAM_MEMBER_EMAIL)
           MAILOSAUR_SERVER_ID: $(MAILOSAUR_SERVER_ID)
-          E2E_USER_QA_USERNAME: $(E2E_USER_QA_USERNAME)
-          E2E_USER_QA_PASSWORD: $(E2E_USER_QA_PASSWORD)
           BASIC_AUTH_USERNAME: $(BASIC_AUTH_USERNAME)
           BASIC_AUTH_PASSWORD: $(BASIC_AUTH_PASSWORD)
           TEAMS_WEBHOOK_URL: $(TEAMS_WEBHOOK_URL)
           SLACK_WEBHOOK_URL: $(SLACK_WEBHOOK_URL)
           NOTIFY_ON: always # ya: problems
 
-      # Tests tab me regression ke pass/fail
+      # Tests tab me pass/fail: is run ne jo bhi junit.xml likha (nightly me smoke aur regression, dono)
       - task: PublishTestResults@2
         displayName: Publish test results
         condition: succeededOrFailed()
         inputs:
           testResultsFormat: JUnit
-          testResultsFiles: .e2e/nightly/regression/junit.xml
-          testRunTitle: Nightly regression
+          testResultsFiles: .e2e/**/junit.xml
+          testRunTitle: nightly-qa ${{ parameters.suite }}
           failTaskOnMissingResultsFile: false
 
-      - task: PublishPipelineArtifact@1
-        displayName: Upload history
-        condition: succeededOrFailed()
-        inputs:
-          targetPath: .nightly-history
-          artifact: nightly-history
+      - ${{ if eq(parameters.suite, 'nightly') }}:
+          # always(): run red ho to bhi report upload ho
+          - task: PublishPipelineArtifact@1
+            displayName: Upload history
+            condition: always()
+            inputs:
+              targetPath: .nightly-history
+              artifact: nightly-history
 
-      # Artifacts → nightly-report download karo → index.html kholo
-      - task: PublishPipelineArtifact@1
-        displayName: Upload report
-        condition: succeededOrFailed()
-        inputs:
-          targetPath: nightly-report
-          artifact: nightly-report
+          # Artifacts → nightly-report download karo → index.html kholo
+          - task: PublishPipelineArtifact@1
+            displayName: Upload report
+            condition: always()
+            inputs:
+              targetPath: nightly-report
+              artifact: nightly-report
+
+      - ${{ else }}:
+          # Baaki suites: e2e ka apna output (report.json, junit.xml, report.html, results/ me traces + screenshots).
+          # sessions/ (saved logins) kabhi upload nahi; cache/ repo me commit hai.
+          - task: CopyFiles@2
+            displayName: Collect e2e output
+            condition: succeededOrFailed()
+            inputs:
+              SourceFolder: .e2e
+              Contents: |
+                **
+                !**/sessions/**
+                !cache/**
+              TargetFolder: $(Build.ArtifactStagingDirectory)/e2e
+
+          - task: PublishPipelineArtifact@1
+            displayName: Upload e2e output
+            condition: succeededOrFailed()
+            inputs:
+              targetPath: $(Build.ArtifactStagingDirectory)/e2e
+              artifact: e2e-${{ parameters.suite }}

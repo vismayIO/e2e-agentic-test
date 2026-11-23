@@ -1,149 +1,172 @@
-# nightly-qa — AI se deployed app ki nightly testing
+# nightly-qa — Motadata console ka agent-driven QA
 
-Yeh ek alag repo hai. Aapka frontend kahin bhi deployed ho, yeh har raat us URL pe do kaam karta hai aur ek HTML report deta hai:
+Yeh repo deployed Motadata console ko bahar se test karta hai — app ka code yahan nahi hai, sirf uska URL. Tests **agent-driven** hain: jo kaam jaancha ja raha hai woh AI agent karta hai, aur nateeja code aur agent dono jaanchte hain. Teen cheezein milti hain:
 
-| Hissa | Kya karta hai | Command |
+| Hissa | Kya | Kahan se |
 |---|---|---|
-| **Regression** | `tests/` ke flows chalata hai (AI steps + exact checks) | `e2e run` |
-| **Explore** | AI agent ko ek goal deta hai; woh khud app chalata hai aur bugs report karta hai, bina test likhe | `e2e explore` |
-| **Report** | Dono ko milake verdict (Healthy / Needs attention / Broken), screenshots, 30 raaton ka trend | `nightly-report/index.html` |
+| **Suites** | Likhe hue tests ke hisse: smoke, sanity, regression, bugs, retest | `npm run <suite> -- [module]` |
+| **Nightly pipeline** | Smoke gate → poora run → exploration → HTML report, verdict, Slack/Teams | `npm run nightly` (CI har raat) |
+| **Exploration** | Bina test likhe: agent ko ek goal (charter) do, woh app chalata hai aur defects report karta hai | `npm run explore`, `npm run monkey`, `npx e2e explore` |
 
-Engine: [e2e](https://github.com/e2e-inc/e2e) (version `package.json` me exact pinned hai — 1.0 se pehle minor releases me API badal sakti hai).
+**Strategy [docs/testing.md](docs/testing.md) me hai** — kaun sa testing kab aur kyun, tags, bug ka safar, nightly ka verdict, charters, naya module, kharcha. Yeh page repo ka darwaza hai: chalana, layout, test likhne ke niyam, CI ka setup.
 
-## Structure
+Engine: [e2e](https://e2e.com/docs) (`e2e` + `@e2e-dev/web`). Version `package.json` me exact pinned hai — 1.0 se pehle minor releases me API badal sakti hai. Is version ke docs `node_modules/e2e/docs/` me hain.
 
-```
-e2e.config.ts            APP_URL, model, login, basic auth, reporters
-nightly.config.ts        ← raat ko kya chalega: explore goals, verdict rules
-tests/
-  auth.setup.e2e.ts      QA user login → session "qa" (credentials set hon tab)
-  smoke.e2e.ts           generic checks, kisi bhi app pe chalte hain
-  flows/                 ← apne critical flows yahan (example template hai)
-  app/                   Motadata console ka shared hissa — har module isi pe
-  <module>/              ek module ke tests (abhi: iam/) — neeche "Modules"
-docs/<module>/           us module ka acceptance brief
-scripts/nightly.ts       orchestrator: run → explore → report → notify
-scripts/cost-report.ts   last run ka model kharcha + replay cache
-scripts/verify-coverage.ts  brief ka har ID: test hai ya wajah
-lib/                     report parsing, HTML, Slack/Teams, Mailosaur, CSV, pricing
-.github/workflows/nightly.yml   GitHub Actions schedule
-azure-pipelines.yml             Azure DevOps schedule
-```
-
-## Local pe chalao
+## Quick start
 
 ```bash
 npm ci
 npx e2e-web install chromium
-cp .env.example .env        # APP_URL + ek model key bharo
-npm run nightly             # poora run
-open nightly-report/index.html
+cp .env.example .env        # neeche ki values bharo
+
+npm test                    # typecheck + verify — app nahi kholta
+npm run smoke               # build zinda hai?
+npm run sanity -- iam       # ek module ke mukhya kaam
+npm run nightly             # poori pipeline → nightly-report/index.html
 ```
 
-Sirf ek hissa: `npm run nightly -- --only regression` ya `--only explore`.
-Report dobara banana (bina tests chalaye): `npm run report`.
+`.env` me chahiye (poori list `.env.example` me; scripts aur e2e dono ise `lib/env.ts` se padhte hain):
 
-## CI me lagao
+| Variable | Kya |
+|---|---|
+| `APP_URL` | Deployed console ka URL |
+| `APP_ADMIN_EMAIL` | Console admin ka Mailosaur address — sign-in code isi inbox me aata hai |
+| `MAILOSAUR_API_KEY`, `MAILOSAUR_SERVER_ID` | Us inbox se code padhne ke liye |
+| Ek model key | `AZURE_API_KEY` + `AZURE_RESOURCE_NAME` (+ `AZURE_OPENAI_DEPLOYMENT`), ya `ANTHROPIC_API_KEY`, ya `OPENAI_API_KEY`, ya `AI_GATEWAY_API_KEY` |
 
-- **GitHub Actions:** `.github/workflows/nightly.yml` — Settings me `APP_URL` variable aur model key secret daalo. Actions tab se "Run workflow" se turant bhi chala sakte ho.
-- **Azure DevOps:** `azure-pipelines.yml` se pipeline banao, Library me `nightly-qa` variable group banao (file ke upar steps likhe hain).
+Yeh sab zaroori hain. Login ke bina (`APP_ADMIN_EMAIL` / Mailosaur) admin setup fail hota hai aur run red — kuch chupchaap skip nahi hota. `APP_NAME` (default "Motadata console") report ka naam hai; `APP_ADMIN_NAME` (default "Test User") admin ka naam, jaisa app dikhata hai.
 
-Dono roz **20:17 UTC (1:47 AM IST)** pe chalte hain. Time badalna ho to `cron` line badlo (UTC me hota hai).
+## Commands
 
-Report kahan milegi: run ke **Artifacts → nightly-report** download karo, `index.html` kholo (`raw/` folder saath rehna chahiye — screenshots wahan hain).
-RED hone pe pipeline fail hoti hai, to GitHub/Azure ki default failure email bhi aati hai. Slack/Teams ke liye webhook secret daalo.
+```bash
+npm run smoke                                 # sab modules ka smoke
+npm run sanity -- iam                         # ek module ka sanity
+npm run regression                            # sab tests, known bugs chhod ke (ya: -- iam)
+npm run bugs                                  # known bugs ka retest
+npm run retest                                # pichhle run (.e2e) me jo pass nahi hue
+npm run retest -- -- --output .e2e/nightly/regression     # nightly ke failures
+npm run explore -- iam                        # module ke exploratory charters
+npm run monkey                                # random create forms pe fuzzer (MONKEY_SEED=<seed> se wahi dobara)
+npx e2e explore --session admin --agent explorer --output .e2e/explore/adhoc '<goal>'   # ad-hoc
 
-## Apne tests likhna
+npm run suite -- sanity iam -- --headed       # koi bhi suite; e2e flags `--` ke baad
+npx e2e run tests/iam/roles.e2e.ts            # ek file (screen chunne ke liye tag nahi, path)
+npx e2e run tests/iam/roles.e2e.ts:31         # ek test
+npm run verify                                # tags, smoke, brief coverage, charters, npm shortcuts (ya: -- iam)
+npm run cost                                  # last run ka model kharcha + replay cache
+npm run nightly                               # poori pipeline
+```
 
-`tests/flows/example-search.e2e.ts` dekho. Pattern:
+Ad-hoc command me `--agent explorer` exploration ka persona deta hai (bina iske test-step wala `default` agent chalta hai), aur apna `--output` folder `.e2e/report.json` ko bachata hai, jise `npm run retest` padhta hai. Har type kab chalana hai: [docs/testing.md → "Testing types"](docs/testing.md#testing-types).
+
+## Repo layout
+
+```
+e2e.config.ts          target (APP_URL), model, agents (default + explorer / skeptic / fuzzer), limits, reporters
+nightly.config.ts      raat ko kya chale aur kitna: stages, exploration budget, verdict threshold
+lib/
+  suites.ts            suites aur tags ki ek hi definition: tags → e2e flags; `knownBug`
+  modules.ts           modules = tests/ ke folders
+  charters.ts          personas; modules ke charters → `e2e explore` arguments; monkey (seed se)
+  env.ts  model.ts     `.env` ka ek hi loader; model ka chunaav
+  run-e2e.ts           e2e CLI chalana
+  e2e-report.ts  html.ts  notify.ts  types.ts     nightly report: parsing, HTML/markdown, Slack/Teams
+  mailosaur.ts  csv.ts  pricing.ts                sign-in code ka inbox, CSV, model ke list prices
+scripts/
+  suite.ts             ek suite ya exploration: `npm run suite -- <suite> [module…] [-- e2e flags]`
+  nightly.ts           pipeline: smoke → regression → charters → monkey → report → notify
+  verify.ts            suite ki safai, app ke bina: tags, smoke, brief coverage, charters, npm shortcuts
+  cost-report.ts       ek run ka model kharcha aur replay cache
+tests/
+  app/                 jo sab modules me same hai (neeche)
+  <module>/            console ka ek module — abhi: iam/
+docs/
+  testing.md           strategy
+  <module>/acceptance-brief.md    module se kya umeed hai; tests ke tags isi ke IDs hain
+.github/workflows/nightly.yml  ·  .github/workflows/test.yml  ·  azure-pipelines.yml     CI
+```
+
+`tests/app/` — har module isi pe banta hai, dobara mat likho:
+
+| File | Kya |
+|---|---|
+| `auth.ts` | Admin login: email code Mailosaur se (`lib/mailosaur.ts`). Login `.auth/admin.json` me save hota hai, isliye naya code sirf tab jab saved login expire ho — modules kitne bhi hon. |
+| `admin.setup.e2e.ts` | Halka `admin` session: sirf login, koi test data nahi. Smoke tests aur exploration isi pe. |
+| `smoke.e2e.ts` | Console ka apna smoke: sign-in page, aur signed-in navigation. |
+| `ui.ts` | UI kit: `openPage`, `pageLoaded`, `toast`, `Dialog`, row ka "⋯" menu, `ListPage` (search + rows), dates. Locators app ke test ids se. |
+| `data.ts` | `freshNames(prefix)`: har attempt ke naye naam aur Mailosaur addresses. |
+| `cleanup.ts` | `sweep()`: module ke prefix wala purana data ek-ek karke hatao (3 ghante se naya nahi — woh kisi chal rahe run ka ho sakta hai). |
+
+## Test likhna
+
+Niyam ek hi hai: **kaam agent kare, nateeja do baar jaancho.**
 
 ```ts
-import { test } from '@e2e-dev/web';
-import { expect } from 'e2e';
+const data = iamNames(); // file ke module scope me: har attempt ke naye naam
 
-test('user can add to cart', { tags: ['critical'] }, async ({ app, agent, screen }) => {
-  await app.open('/products');
-  await agent.act('add the first product to the cart');        // AI step
-  await expect(screen.getByRole('status')).toContainText('1'); // exact check, model call nahi
-  await agent.assert('the cart shows one item');               // AI check
+test('a new custom role is listed as Custom', { tags: ['sanity', 'SIT-IAM-11', 'P1'] }, async ({ agent, roles }) => {
+  const name = data.name('release-engineer');
+  const description = 'Edits tickets owned by the person’s teams';
+  await roles.open(); // Given: exact code
+
+  // When: agent, ek atomic goal jo batata hai kahan rukna hai
+  await agent.act('create a custom role named {name} with the description {description}; on the permissions step tick only the "Read Role" permission, then save the role', {
+    params: { name: unique(name), description },
+  });
+
+  await roles.open();
+  await roles.search(name);
+  // Then, pehle code se: asli state (expect rukta hai jab tak list aa na jaaye)
+  await expect(roles.row(name).getByTestId('type-chip')).toHaveText('Custom');
+  await expect(roles.row(name).getByTestId('permission-count')).toHaveText('1 permission');
+  // Then, phir agent se: screen ko ek baar dekh ke
+  await agent.assert('the roles list shows {name} as a Custom role with the description {description} and 1 permission', { params: { name: unique(name), description } });
 });
 ```
 
-- Login chahiye to `describe('...', { session: 'qa' }, ...)`.
-- Locally pass hua `agent.act` step `.e2e/cache/` me record hota hai. **Is folder ko commit karo** — CI me woh bina model call ke replay hota hai (tez + sasta). App badal gaya aur replay fit nahi hua to agent khud sambhal leta hai.
+- **When — `agent.act`:** admin ki zubaan me ek atomic goal, jisme likha ho kahan rukna hai ("…and stop at the form that opens; do not save"). Do nateeje hon to do goals, beech me check. Har agent call ki chhat `e2e.config.ts` me hai; goal usme poora na ho to goal todo, chhat mat badhao.
+- **Then — do baar, isi kram me:** pehle code `expect` (page object ke locators) asli state pakki kare — woh rukta hai jab tak state aa na jaaye; phir `agent.assert` sirf woh kahe jo us pal ki screen dikha sakti hai (beeti hui baat ya "kal" jaisi tareekh nahi). Dono pass hon tabhi test pass: agent ki galat "ho gaya" code pakadta hai, aur jo wording code nahi samajhta woh agent.
+- **Exact code sirf wahan jahan test ka sawaal nahi:** precondition (*Given* — jiska fail hona nateeja na bigaade), setup / cleanup, aur asli logon pe kaam (jaise directory-managed person ki source-of-truth warning: dialog kholo, kabhi confirm nahi).
+- **Tags:** har test pe theek ek priority (`P0` / `P1` / `P2`, describe se bhi aa sakti hai); brief ka ID (`SIT-IAM-11`); chhote suite ke liye `smoke` ya `sanity`. Koi aur tag nahi — `npm run verify` galat tag pakadta hai. Smoke test `admin` session pe chale aur kuch na badle. Poore niyam: [docs/testing.md → "Tags"](docs/testing.md#tags--bas-yeh-chaar-tarah-ke).
+- **Known bug** (brief ka behaviour jo app abhi nahi karta): `knownBug('<tareekh>: <kya dikha>', 'BEH-IAM-20', 'P1')` se likho — e2e ka expected-failure mark (`fail`) + `bug` tag. Bug rahe to test pass gina jaata hai (wajah report me), fix ho to `UNEXPECTED_PASS` — tab mark hatao. Serial group ke andar runner mana karta hai.
+- **Data:** sirf apne module ke prefix se, naam `freshNames` se (test file ke module scope me — retry pe file dobara import hoti hai, to har attempt ko naye naam milte hain). Destructive kaam sirf apne banaye data pe.
+- **`retries: 0`** un tests pe jo kisi fixed (setup ke) user ka state ek taraf badalte hain — disable, delete, sessions khatam (serial group pe bhi). Retry ko badla hua user milta, aur uska error asli wajah chhupa deta. Apne naye data wale tests retry kar sakte hain.
+- Brief ka jo ID automate nahi ho sakta, use `tests/<module>/coverage.ts` (`GAPS`) me thos wajah ke saath likho — kya kam hai (data, permission, infrastructure), "mushkil hai" nahi.
 
-## Modules (`tests/<module>/`)
+## Modules
 
-Console ke har module (IAM, aage aur) ka ek folder. Jo sab modules me same hai woh `tests/app/` me ek baar:
-
-| `tests/app/` | Kya |
-|---|---|
-| `auth.ts` | Admin login: email code Mailosaur se (`lib/mailosaur.ts`), saved login `.auth/admin.json` — har account ka OTP ek hi baar, modules kitne bhi hon. App ka sessionStorage login session me rakhna. |
-| `ui.ts` | UI kit: `openPage`, `toast`, `Dialog`, row "⋯" menu, `ListPage` (search + rows), date picker. Locators app ke test ids se. |
-| `data.ts` | `freshNames(prefix)`: har attempt ke naye naam/Mailosaur addresses (retry purane data se nahi takrata). |
-| `cleanup.ts` | `sweep()`: module ke prefix wala purana data ek-ek karke hatao. |
-
-Ek module folder ka shape (IAM jaisa):
-
-```
-tests/<module>/
-  <module>.ts            module constants: session naam, data prefix, agent context
-  <module>.setup.e2e.ts  adminSignIn → apna purana data sweep → apna test data → session.save
-  pages/                 har screen ka page object (tests/app/ui.ts pe)
-  fixtures.ts            test.extend: page objects fixtures ke roop me
-  coverage.ts            brief ke jo IDs automate nahi ho sakte, wajah ke saath
-  *.e2e.ts               tests: tags me brief IDs + P0/P1/P2
-docs/<module>/acceptance-brief.md
-```
-
-**Naya module:** upar ka shape banao — apna prefix (`<module>-e2e`), apna session naam, aur setup me sirf apna data (pehle `sweep` se apna purana data, phir naya). Login, UI kit, naming, cleanup dobara mat likho; kisi doosre module ka page chahiye to wahi import karo (`tests/iam/pages/users.ts`). Phir `npm run coverage -- <module>`.
-
-**Likhne ke niyam (har module):**
-- **Agent-driven, do taraf se jaancha hua:** har test me jo kaam jaancha ja raha hai (*When*) woh agent karta hai — admin ki zubaan me ek chhota goal (`agent.act`, kahan rukna hai woh bhi likha). Nateeja (*Then*) do baar: `agent.assert` brief ki har baat naam se jaanchta hai, aur code (`expect` + page object locators) screen ki asli state pakki karta hai. Dono pass hon tabhi test pass — agent ki galat "ho gaya" baat code pakad leta hai, aur jo wording code nahi samajhta use agent.
-- **Exact code sirf wahan jahan test ka sawaal nahi:** precondition (*Given* — jaise ek bana hua profile, jiska fail hona test ka nateeja na bigaade), setup / cleanup, aur asli logon pe khatarnaak kaam (Tenant Owner). Har agent call ki chhat `e2e.config.ts` me (`maxSteps` 25, `maxModelCalls` 25); goal us chhat me poora na ho to use todo.
-- Pehla run zyada model calls leta hai; uske baad goals replay cache (`.e2e/cache/`) se bina model ke chalte hain, jab tak screen na badle (`npm run cost` dikhata hai kitne replay hue).
-- Data sirf apne prefix se, naam `freshNames` se (test file ke module scope me). Destructive kaam sirf apne banaye data pe.
-- Tag `bug` = brief ka behaviour jo app abhi nahi karta (jaan-boojh ke fail, comment me tareekh + kya dikha).
-- Jo test kisi fixed (setup ke) user ka state ek taraf badle — disable, delete, sessions khatam — use `retries: 0` (serial group pe bhi): retry ko badla hua user milta aur uska error asli wajah chhupa deta. Apne naye data wale tests retry kar sakte hain (`freshNames` har attempt naye naam deta hai).
-
-```sh
-npx e2e run tests/iam                             # ek module
-npx e2e run tests/iam --exclude-tag bug           # sirf jo pass hona chahiye
-npx e2e run tests/iam --last-failed --headed      # fail hue dobara, browser dikhta hua
-npm run coverage -- iam                           # brief coverage
-npm run cost                                      # last run ka model kharcha + replay cache
-```
-
-**Chahiye** (`.env`): `APP_URL`, `APP_ADMIN_EMAIL` (Mailosaur address), `MAILOSAUR_API_KEY`, `MAILOSAUR_SERVER_ID`; optional `APP_ADMIN_NAME` (default "Test User"). Na ho to signed-in suites skip.
+Naya module = `tests/<module>/` folder, shared code me koi badlav nahi: [docs/testing.md → "Naya module jodna"](docs/testing.md#naya-module-jodna).
 
 ### IAM (`tests/iam/`)
 
-Brief `docs/iam/acceptance-brief.md`. Setup pehle pichhle runs ka `iam-e2e-` data hatata hai (service accounts → access profiles → roles → users; kuch na hate to setup fail hota hai), phir 8 disposable users ka pool banata hai (ek invite, har ek ka pehla sign-in OTP se) taaki disable/delete/sessions asli logon ko na chhuein, aur apna ek access profile do pool users ko deta hai (service-account owner picker sirf direct access profile wale members dikhata hai). Tests ke holders aur owners sirf pool users hain. Optional env: `IAM_TENANT_OWNER_EMAIL`, `IAM_ATTRIBUTES_ENABLED=1`, `IAM_TEAM` + `IAM_TEAM_MEMBER_EMAIL` (team → member wala test).
+Brief: [docs/iam/acceptance-brief.md](docs/iam/acceptance-brief.md). Setup pehle khatam ho chuke runs ka `iam-e2e-` data hatata hai (kuch na hate to setup fail hota hai), phir 8 disposable users ka pool banata hai (har ek ka pehla sign-in Mailosaur ke code se) taaki disable / delete / sessions wale tests asli logon ko na chhuein. Tests ke holders aur owners sirf pool users hain.
 
-**Cost:** `scripts/cost-report.ts` `.e2e/report.json` se har agent step ke tokens, cache (replay) aur USD (list prices `lib/pricing.ts`, tareekh ke saath). Naya model use karo to pehle `lib/pricing.ts` me uska rate.
+Optional env — na hon to sirf woh tests skip:
 
-## Explore goals
-
-`nightly.config.ts` me. Har goal ek sentence: kahan jaana hai + kis nazariye se.
-
-```ts
-{ id: 'checkout', goal: 'Buy the cheapest product as a new customer and report anything off', maxSteps: 10, session: 'qa' }
-```
-
-Cost: explore ka cache nahi hota, har raat model calls lagte hain — roughly `goals × maxSteps`. Report me "AI tokens" tile se kharcha dekhte raho.
-
-## Verdict
-
-| | Kab |
+| Variable | Kis test ke liye |
 |---|---|
-| 🔴 Broken | koi regression test fail, ya explore me high/critical issue, ya site/model hi nahi chala |
-| 🟡 Needs attention | flaky tests, medium/low issues, warnings |
-| 🟢 Healthy | baaki sab |
+| `IAM_SCIM_USER_EMAIL` | Tenant ka ek directory-managed (SCIM / LDAP) person: source of truth ko Manual pe le jaane ki warning (test warning dekh ke Cancel karta hai) |
+| `IAM_TEAM` + `IAM_TEAM_MEMBER_EMAIL` | Maujooda team aur uska ek sadasya: team ka profile sadasya pe dikhe |
 
-Threshold `nightly.config.ts → verdict.failOnIssueSeverity` me badlo.
+## Nightly report
+
+`npm run nightly` → `nightly-report/index.html` (+ `summary.md`, `summary.json`, `raw/` me har stage ka e2e output aur screenshots). Pichhli 30 raaton ka trend `.nightly-history/history.json` se aata hai. Verdict (RED / YELLOW / GREEN) ke niyam: [docs/testing.md → "Nightly pipeline"](docs/testing.md#nightly-pipeline-npm-run-nightly). RED pe `npm run nightly` exit 1 deta hai (`NIGHTLY_FAIL_ON=never` se nahi); threshold `nightly.config.ts → verdict` me.
+
+## CI
+
+- **GitHub Actions:** `.github/workflows/nightly.yml` (nightly + haath se koi bhi suite) aur `.github/workflows/test.yml` (har push / pull request pe `npm test`). Settings me variables aur secrets daalo — list `nightly.yml` ke upar hai.
+- **Azure DevOps:** `azure-pipelines.yml` se pipeline banao, Library me `nightly-qa` variable group (file ke upar steps hain).
+
+Dono roz **20:17 UTC (1:47 AM IST)** pe nightly pipeline chalate hain; time badalna ho to `cron` line (UTC). Haath se chalane pe do inputs: `suite` aur `module` (khaali = sab) — deploy ke baad smoke isi se. Har run pehle `npm test` chalata hai.
+
+- Nightly ka nateeja: run ke **Artifacts → nightly-report** download karo, `index.html` kholo (`raw/` folder saath rehna chahiye). RED pe job fail hota hai, to GitHub/Azure ki failure email bhi aati hai; Slack/Teams ke liye webhook secret daalo.
+- Baaki suites ka nateeja: artifact **e2e-\<suite\>** — e2e ka `report.json`, `junit.xml`, aur `results/` me har test ka trace aur screenshots.
 
 ## Dhyan rakhne wali baatein
 
-- **Production pe mat chalao** jab tak QA user ka data alag na ho. Agent forms bharta hai, buttons dabata hai. System prompt use real orders/deletes se rokta hai, lekin staging sabse safe hai.
-- Explore findings agent ke claims + screenshot hain. Bug file karne se pehle screenshot dekh lo.
+- **Shared tenant:** console ek deployed, saajha tenant hai. Agent forms bharta hai aur buttons dabata hai — production pe mat chalao. Alag machines ke runs ek saath chal sakte hain (cleanup 3 ghante se naya data nahi chhedta); ek hi checkout me do runs ek saath mat chalao. CI apne runs ek ke baad ek chalata hai (`concurrency`).
+- **Asli logon ko mat chhedo:** tests sirf apne prefix wala data banate / hatate hain. Shared tenant ke niyam har agent ke `context` me hain (admin ka apna account / sessions, Tenant Owner aur SSO settings kabhi nahi), aur har charter ke aakhir me: jo banao woh `<module>-e2e-x-<run id>-` se shuru. Tenant Owner ke guards automate nahi hain (wajah: `tests/iam/coverage.ts`).
+- **Findings claims hain:** exploration ki finding agent ka daava + screenshot hai. Bug file karne se pehle use test se saabit karo ([docs/testing.md → "Bug ka safar"](docs/testing.md#bug-ka-safar-exploratory--retest--regression)).
+- **Tokens:** `.auth/` me saved logins hain aur `.env` me keys — dono gitignore me, kabhi commit mat karo.
+- **Replay cache:** `.e2e/cache/` commit karo — CI me woh read-only hai.
 - GitHub pe **public** repo me 60 din tak koi commit na ho to scheduled workflows band ho jaate hain.

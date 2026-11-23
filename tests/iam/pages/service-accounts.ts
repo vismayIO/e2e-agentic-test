@@ -8,7 +8,7 @@ import { type Ctx, Dialog, ListPage, chooseAction, dialog, openPage, toast } fro
  */
 export const SA_ROLE = 'Vendor';
 
-/** /service-accounts — list, create form, drawer, credentials, owner. DOM map: service-accounts.md */
+/** /service-accounts — list, create form, drawer, credentials, owner. */
 export class ServiceAccountsPage extends ListPage {
   readonly form: Locator;
 
@@ -65,7 +65,7 @@ export class ServiceAccountsPage extends ListPage {
     return drawer;
   }
 
-  async openAction(name: string, item: 'reassign' | 'disable' | 'enable' | 'delete', testId: string): Promise<Dialog> {
+  async openAction(name: string, item: 'disable' | 'delete', testId: string): Promise<Dialog> {
     await chooseAction(this.screen, this.row(name), item);
     const d = dialog(this.screen, testId);
     await d.root.waitFor();
@@ -77,14 +77,12 @@ export class ServiceAccountsPage extends ListPage {
     await expect(this.status(name)).toHaveText('Inactive');
   }
 
-
   async delete(name: string): Promise<void> {
     const d = await this.openAction(name, 'delete', 'sa-delete');
     await d.confirmWord.fill('delete');
     await d.confirm();
     await expect(this.row(name)).toHaveCount(0);
   }
-
 }
 
 /** Service account drawer: identity band + credentials. */
@@ -107,17 +105,17 @@ export class AccountDrawer {
   }
 
   /** Add credential form tak (naam + method), Generate se pehle. */
-  async startCredential(name: string, method: 'static_api_key' | 'oauth2' = 'static_api_key'): Promise<Locator> {
+  async startCredential(name: string): Promise<Locator> {
     await this.root.getByTestId('add-credential').tap();
     const form = this.screen.getByTestId('add-credential-drawer');
     await form.getByTestId('cred-name-input').fill(name);
-    await form.getByTestId(`cred-method-${method}`).check();
+    await form.getByTestId('cred-method-static_api_key').check();
     return form;
   }
 
   /** Generate → "Credential created" dialog (secret sirf yahin, ek baar). */
-  async generate(name: string, method: 'static_api_key' | 'oauth2' = 'static_api_key'): Promise<void> {
-    const form = await this.startCredential(name, method);
+  async generate(name: string): Promise<void> {
+    const form = await this.startCredential(name);
     await form.getByTestId('add-credential-submit').tap();
     await this.secret.waitFor({ timeout: 30_000 });
   }
@@ -133,5 +131,4 @@ export class AccountDrawer {
     await this.done();
     await expect(this.credential(name).getByTestId('credential-status')).toHaveText('Active');
   }
-
 }

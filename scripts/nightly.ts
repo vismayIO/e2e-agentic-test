@@ -1,34 +1,38 @@
 /**
- * Nightly QA orchestrator
+ * Nightly QA pipeline — docs/testing.md → "Nightly pipeline"
  *
- *   node scripts/nightly.ts                 # poora run: regression → explore → report → notify
- *   node scripts/nightly.ts --only regression
- *   node scripts/nightly.ts --only explore
- *   node scripts/nightly.ts --report-only   # pichhle outputs se sirf report dobara banao
+ *   node scripts/nightly.ts    # smoke → regression (+ known bugs) → explore + monkey → report → notify
+ *
+ * Smoke fail to baaki stages nahi chalte (toota build model calls na khaaye).
+ * Kaun se stages aur kitna: nightly.config.ts. Ek hi suite ya module: scripts/suite.ts. Repo root se chalao (npm run nightly).
+ *
+ * Har stage ki apni time limit hai (nightly.config.ts), to raat khud khatam hoti hai. Report hamesha banti hai:
+ * Ctrl-C se roka jaaye to jo stages poore hue unki.
  *
  * Output:  nightly-report/index.html  (+ summary.md, summary.json, raw/)
  * History: .nightly-history/history.json  (CI cache me rakho → trend chart)
- * Exit:    1 agar verdict RED (aur failPipelineOn = 'red'), warna 0
+ * Exit:    130 agar beech me roka gaya, 1 agar verdict RED (aur failPipelineOn = 'red'), warna 0
  */
-import { spawn } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import config from '../nightly.config.ts';
-import { env, hasLogin } from '../lib/env.ts';
-import { summarize } from '../lib/e2e-report.ts';
+import { charters, exploreArgs, monkeyCharters, pick, seedOfTheDay, type PlannedCharter } from '../lib/charters.ts';
+import { env } from '../lib/env.ts';
+import { rawBase, summarize } from '../lib/e2e-report.ts';
 import { renderHtml, renderMarkdown } from '../lib/html.ts';
+import { modelLabel } from '../lib/model.ts';
+import { modules } from '../lib/modules.ts';
 import { notify } from '../lib/notify.ts';
+import { INTERRUPTED, runE2E } from '../lib/run-e2e.ts';
+import { runArgs } from '../lib/suites.ts';
 import type { HistoryEntry, NightlyRunMeta, PhaseRun } from '../lib/types.ts';
 
-const ROOT = resolve(import.meta.dirname, '..');
-const RAW = join(ROOT, '.e2e', 'nightly');
-const OUT = join(ROOT, env('NIGHTLY_REPORT_DIR') ?? 'nightly-report');
-const HISTORY_DIR = join(ROOT, env('NIGHTLY_HISTORY_DIR') ?? '.nightly-history');
-const E2E_BIN = join(ROOT, 'node_modules', '.bin', process.platform === 'win32' ? 'e2e.cmd' : 'e2e');
+const RAW = '.e2e/nightly';
+const OUT = 'nightly-report';
+const HISTORY_FILE = '.nightly-history/history.json';
 
-const args = process.argv.slice(2);
-const reportOnly = args.includes('--report-only');
-const only = args.includes('--only') ? args[args.indexOf('--only') + 1] : undefined;
+type StageRuns = Pick<NightlyRunMeta, 'phases' | 'monkeySeed'>;
+type Stage = Omit<PhaseRun, 'exitCode' | 'durationMs' | 'skipped'>;
 
 function ciRunUrl(): string | undefined {
   if (env('GITHUB_RUN_ID')) {
@@ -40,76 +44,68 @@ function ciRunUrl(): string | undefined {
   return undefined;
 }
 
-function modelLabel(): string | undefined {
-  if (env('AZURE_API_KEY')) return `azure/${env('AZURE_OPENAI_DEPLOYMENT') ?? 'gpt-6-luna'}`;
-  if (env('ANTHROPIC_API_KEY')) return `anthropic/${env('ANTHROPIC_MODEL') ?? 'claude-sonnet-5-5'}`;
-  if (env('OPENAI_API_KEY')) return `openai/${env('OPENAI_MODEL') ?? 'gpt-6-luna'}`;
-  if (env('AI_GATEWAY_API_KEY')) return `gateway/${env('AI_GATEWAY_MODEL') ?? 'openai/gpt-6-luna-fast'}`;
-  return undefined;
+/** Aaj raat ke charters: likhe hue me se `explore.charters` (seed se chune), phir monkey — wahi seed. Sab modules. */
+async function plan(seed: number): Promise<PlannedCharter[]> {
+  const { charters: count, monkey } = config.explore;
+  const mods = modules();
+  return [...pick(await charters(mods), count, seed), ...await monkeyCharters(mods, monkey.count, seed, monkey.maxSteps)];
 }
 
-function runE2E(argv: string[]): Promise<{ code: number | null; ms: number }> {
-  const t0 = Date.now();
-  console.log(`\n$ e2e ${argv.map((a) => (/\s/.test(a) ? JSON.stringify(a) : a)).join(' ')}`);
-  return new Promise((done) => {
-    const child = spawn(E2E_BIN, argv, { cwd: ROOT, stdio: 'inherit', env: process.env, shell: process.platform === 'win32' });
-    const stop = () => child.kill('SIGINT');
-    process.once('SIGINT', stop);
-    process.once('SIGTERM', stop);
-    child.on('close', (code) => {
-      process.off('SIGINT', stop);
-      process.off('SIGTERM', stop);
-      done({ code, ms: Date.now() - t0 });
-    });
-    child.on('error', (err) => {
-      console.error(`e2e start nahi hua: ${err.message}`);
-      done({ code: 4, ms: Date.now() - t0 });
-    });
-  });
-}
-
-async function runPhases(): Promise<PhaseRun[]> {
-  const phases: PhaseRun[] = [];
+async function runStages(): Promise<StageRuns> {
+  // Charters pehle hi: kharab MONKEY_SEED ya kisi charters.ts ka error yahin pakdo, do stages chalne ke baad nahi
+  const seed = config.explore.enabled ? seedOfTheDay() : undefined;
+  const planned = seed === undefined ? [] : await plan(seed);
   rmSync(RAW, { recursive: true, force: true });
   mkdirSync(RAW, { recursive: true });
 
-  // 1) Regression suite
-  if (config.regression.enabled && only !== 'explore') {
-    const outputDir = join(RAW, 'regression');
-    const argv = ['run', '--output', outputDir, '--pass-with-no-tests'];
-    for (const t of config.regression.tags ?? []) argv.push('--tag', t);
-    if (config.regression.workers) argv.push('--workers', String(config.regression.workers));
+  const runs: StageRuns = { phases: [], monkeySeed: seed };
+  /** Aage ke stages kyun nahi chalenge: smoke fail hua, ya run roka gaya. */
+  let stopped: string | undefined;
+  const record = (p: PhaseRun) => runs.phases.push(p);
+  const skip = (p: Stage) => record({ ...p, exitCode: null, durationMs: 0, skipped: stopped });
+  /** Ek e2e process. Roka gaya stage (exit 130) adhoora hai: woh "nahi chala" darj hota hai aur agla shuru nahi hota. */
+  const stage = async (p: Stage, argv: string[]): Promise<number | null> => {
     const { code, ms } = await runE2E(argv);
-    phases.push({ kind: 'regression', id: 'regression', label: 'Regression tests', outputDir, exitCode: code, durationMs: ms });
+    if (code === INTERRUPTED) stopped = 'run beech me roka gaya (Ctrl-C / CI cancel)';
+    record({ ...p, exitCode: code, durationMs: ms, skipped: code === INTERRUPTED ? stopped : undefined });
+    return code;
+  };
+
+  // 1) Smoke — gate
+  if (config.smoke.enabled) {
+    const outputDir = join(RAW, 'smoke');
+    const code = await stage({ kind: 'smoke', id: 'smoke', label: 'Smoke tests', outputDir }, [...runArgs('smoke'), '--output', outputDir, '--max-duration', String(config.smoke.maxMinutes * 60_000)]);
+    if (code !== 0) stopped ??= `smoke pass nahi hua (exit ${code ?? 'signal'})`;
   }
 
-  // 2) Agentic exploration — ek goal ek ke baad ek (site pe load kam, logs saaf)
-  if (only !== 'regression') {
-    for (const g of config.explore) {
-      const outputDir = join(RAW, 'explore', g.id);
-      if (g.session && !hasLogin()) {
-        phases.push({ kind: 'explore', id: g.id, label: g.goal, outputDir, exitCode: null, durationMs: 0,
-          skipped: `session "${g.session}" ke liye E2E_USER_QA_USERNAME / E2E_USER_QA_PASSWORD set nahi hai` });
-        continue;
+  // 2) Regression — sab tests ek hi run me; known bugs (knownBug) isi report se alag nikalte hain
+  if (config.regression.enabled) {
+    const outputDir = join(RAW, 'regression');
+    const p: Stage = { kind: 'regression', id: 'regression', label: 'Regression tests', outputDir };
+    if (stopped) skip(p);
+    else await stage(p, [...runArgs('regression'), '--output', outputDir, '--max-duration', String(config.regression.maxMinutes * 60_000)]);
+  }
+
+  // 3) Exploration — raat ke charters ek ke baad ek (shared tenant pe load kam, logs saaf)
+  if (config.explore.enabled) {
+    if (stopped) skip({ kind: 'explore', id: 'explore', label: 'Exploratory aur monkey charters', outputDir: join(RAW, 'explore') });
+    else {
+      for (const c of planned) {
+        const outputDir = join(RAW, 'explore', c.id);
+        await stage({ kind: 'explore', id: c.id, label: c.goal, outputDir, module: c.module, persona: c.persona, charter: c.kind },
+          exploreArgs(c, outputDir, config.explore));
+        if (stopped) break;
       }
-      const argv = ['explore', g.goal, '--output', outputDir, '--reporter', 'list,markdown',
-        '--max-steps', String(g.maxSteps ?? 8)];
-      if (g.timeoutMs) argv.push('--timeout', String(g.timeoutMs));
-      if (g.session) argv.push('--session', g.session);
-      const { code, ms } = await runE2E(argv);
-      phases.push({ kind: 'explore', id: g.id, label: g.goal, outputDir, exitCode: code, durationMs: ms });
     }
   }
-  writeFileSync(join(RAW, 'phases.json'), JSON.stringify(phases, null, 2));
-  return phases;
+  return runs;
 }
 
 /** raw outputs report folder me copy — sessions (login state) aur ai-trace kabhi nahi */
 function copyRaw(phases: PhaseRun[]): void {
   for (const p of phases) {
     if (p.skipped || !existsSync(p.outputDir)) continue;
-    const dest = p.kind === 'regression' ? join(OUT, 'raw', 'regression') : join(OUT, 'raw', 'explore', p.id);
-    cpSync(p.outputDir, dest, {
+    cpSync(p.outputDir, join(OUT, rawBase(p)), {
       recursive: true,
       filter: (src) => !/[\\/](sessions)([\\/]|$)/.test(src) && !src.endsWith('ai-trace.json'),
     });
@@ -117,10 +113,9 @@ function copyRaw(phases: PhaseRun[]): void {
 }
 
 function loadHistory(): HistoryEntry[] {
-  const file = join(HISTORY_DIR, 'history.json');
-  if (!existsSync(file)) return [];
+  if (!existsSync(HISTORY_FILE)) return [];
   try {
-    const h = JSON.parse(readFileSync(file, 'utf8'));
+    const h = JSON.parse(readFileSync(HISTORY_FILE, 'utf8'));
     return Array.isArray(h) ? h : [];
   } catch {
     return [];
@@ -131,41 +126,29 @@ async function main() {
   const startedAt = new Date().toISOString();
   const appUrl = env('APP_URL');
   if (!appUrl) {
-    console.error('APP_URL set karo (jaise https://staging.myapp.com)');
+    console.error('APP_URL set karo — jis deployed console ko test karna hai (.env.example dekho)');
     process.exit(2);
   }
 
-  let phases: PhaseRun[];
-  if (reportOnly) {
-    const f = join(RAW, 'phases.json');
-    if (!existsSync(f)) {
-      console.error(`${f} nahi mila — pehle poora run chalao`);
-      process.exit(2);
-    }
-    phases = JSON.parse(readFileSync(f, 'utf8'));
-  } else {
-    phases = await runPhases();
-  }
+  const { phases, monkeySeed } = await runStages();
 
   const summary = summarize(phases, config);
   const meta: NightlyRunMeta = {
     appName: config.appName, appUrl, startedAt, finishedAt: new Date().toISOString(),
-    ciRunUrl: ciRunUrl(), model: modelLabel(), phases,
+    ciRunUrl: ciRunUrl(), model: modelLabel(), monkeySeed, phases,
   };
 
-  // History (trend) — report-only rerun pe duplicate entry na bane
+  // History (trend)
   const history = loadHistory();
-  if (!reportOnly) {
-    history.push({
-      date: startedAt, verdict: summary.verdict,
-      passed: summary.regression.passed, failed: summary.regression.failed, flaky: summary.regression.flaky,
-      issues: summary.issues, warnings: summary.warnings,
-      durationMs: phases.reduce((n, p) => n + (p.durationMs ?? 0), 0), runUrl: meta.ciRunUrl,
-    });
-  }
+  history.push({
+    date: startedAt, verdict: summary.verdict,
+    passed: summary.regression.passed, failed: summary.regression.failed, flaky: summary.regression.flaky,
+    issues: summary.issues, warnings: summary.warnings,
+    durationMs: phases.reduce((n, p) => n + p.durationMs, 0), runUrl: meta.ciRunUrl,
+  });
   const trimmed = history.slice(-config.historyLimit);
-  mkdirSync(HISTORY_DIR, { recursive: true });
-  writeFileSync(join(HISTORY_DIR, 'history.json'), JSON.stringify(trimmed, null, 2));
+  mkdirSync(dirname(HISTORY_FILE), { recursive: true });
+  writeFileSync(HISTORY_FILE, JSON.stringify(trimmed, null, 2));
 
   rmSync(OUT, { recursive: true, force: true });
   mkdirSync(OUT, { recursive: true });
@@ -180,10 +163,10 @@ async function main() {
   if (env('GITHUB_STEP_SUMMARY')) writeFileSync(env('GITHUB_STEP_SUMMARY')!, md, { flag: 'a' });
 
   console.log(`\n${md}`);
-  console.log(`Report: ${join(OUT, 'index.html')}`);
+  console.log(`Report: ${resolve(OUT, 'index.html')}`);
 
-  if (!reportOnly || args.includes('--notify')) await notify(meta, summary, env('NIGHTLY_REPORT_URL'));
-
+  await notify(meta, summary);
+  if (phases.some((p) => p.exitCode === INTERRUPTED)) process.exit(INTERRUPTED);
   if (config.failPipelineOn === 'red' && summary.verdict === 'red') process.exit(1);
 }
 

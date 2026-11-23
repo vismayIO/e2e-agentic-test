@@ -4,7 +4,7 @@ import type { Ctx } from '../../app/ui.ts';
 
 /**
  * Users page ke "Invite users" drawer: email invite aur CSV import, aur "Invitations & imports".
- * Drawer ka test id step ke saath badalta hai (invite-drawer → invite-email / import-csv). DOM map: invite-import.md
+ * Drawer ka test id step ke saath badalta hai (invite-drawer → invite-email / import-csv).
  */
 export class InviteDrawer {
   readonly form: Locator;
@@ -77,8 +77,6 @@ export class InviteDrawer {
     if (await this.banner.isVisible()) throw new Error(`invite refused: ${await this.banner.textContent()}`);
   }
 
-
-
   async cancelImport(): Promise<void> {
     await this.importer.getByRole('button', 'Cancel').tap();
     await this.importer.waitFor({ state: 'detached' });
@@ -96,14 +94,14 @@ export class InvitationsDrawer {
     this.root = fx.screen.getByTestId('invitations-drawer');
   }
 
-  async open(tab: 'Invitations' | 'Imports'): Promise<void> {
+  /** Drawer kholo, Imports tab pe. */
+  async openImports(): Promise<void> {
     await this.fx.screen.getByTestId('invitations-imports', { visible: true }).tap();
-    await this.root.getByTestId(tab === 'Imports' ? 'tab-imports' : 'tab-invitations').tap();
+    await this.root.getByTestId('tab-imports').tap();
   }
 
   /** Naye se purana: ek hi file naam dobara ho to sabse naya pehle. */
   importRow(file: string): Locator {
     return this.root.getByTestId('import-rows').getByRole('listitem').filter({ hasText: file }).first();
   }
-
 }

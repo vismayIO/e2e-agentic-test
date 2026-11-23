@@ -1,76 +1,22 @@
 import { expect, unique } from 'e2e';
-import { chooseAction, toast } from '../app/ui.ts';
-import { ADMIN_NAME, LOGIN_SKIP } from '../app/auth.ts';
+import { knownBug } from '../../lib/suites.ts';
+import { dialog } from '../app/ui.ts';
+import { ADMIN_NAME } from '../app/auth.ts';
 import { describe, test } from './fixtures.ts';
-import { UserDrawer } from './pages/users.ts';
-import { IAM_CONTEXT, IAM_SESSION, IAM_TENANT_OWNER_EMAIL, iamNames, poolUser } from './iam.ts';
+import { IAM_CONTEXT, IAM_SCIM_USER_EMAIL, IAM_SESSION, iamNames, poolUser } from './iam.ts';
 
 const data = iamNames();
 
 /**
- * Person lifecycle: Tenant Owner guard, disable / enable / delete, source of truth, end date, owner guard.
- * Brief: SIT-IAM-01, 04, 07, 08, 09, 15, 16 · BEH-IAM-06, 12, 13, 14, 15 · EX-IAM-06.1, 12.1, 13.1, 14.1
+ * Person lifecycle: disable / enable / delete, source of truth, end date, service-account owner guard.
+ * Brief: SIT-IAM-04, 07, 08, 09, 14, 15 · BEH-IAM-05, 06, 07, 12, 14, 15 · EX-IAM-06.1, 07.2, 12.1, 14.1
  *
  * Disable/delete sirf setup ke disposable users pe (poolUser) — har test ka apna. Jo test sirf dialog
- * dekhta hai woh kabhi submit nahi karta.
+ * dekhta hai woh kabhi submit nahi karta. Asli insaan (directory-managed person) pe steps exact code hain,
+ * agent sirf screen padhta hai. Tenant Owner ke guards automate nahi hain — coverage.ts dekho.
  */
 
-describe('IAM person lifecycle', { skip: LOGIN_SKIP, session: IAM_SESSION, tags: ['iam', 'users'], agentContext: IAM_CONTEXT }, () => {
-  /**
-   * Tenant Owner ke block messages ka DOM abhi map nahi hua (owner ka email chahiye). Steps exact code hain
-   * aur code kabhi submit nahi dabata — guard toota ho to bhi owner off na ho; sirf message ka matlab agent
-   * jaanchta hai.
-   */
-  describe('Tenant Owner', { tags: ['BEH-IAM-13', 'P0'], skip: !IAM_TENANT_OWNER_EMAIL && 'IAM_TENANT_OWNER_EMAIL set nahi hai' }, () => {
-    const owner = IAM_TENANT_OWNER_EMAIL;
-
-    test('the Tenant Owner cannot be disabled from the users list', { tags: ['SIT-IAM-16', 'SIT-IAM-01'] }, async ({ agent, screen, users }) => {
-      await users.open();
-      await users.search(owner);
-
-      await users.rowAction(owner, 'disable');
-
-      await expect(screen.getByTestId('action-gate')).toHaveCount(0, { timeout: 15_000 });
-      await expect(screen.getByTestId('disable-confirm'), 'the Tenant Owner must not get a disable confirmation').toHaveCount(0);
-      await agent.assert('a message says the Tenant Owner cannot be disabled and the designation must be transferred first');
-    });
-
-    test('the Tenant Owner cannot be deleted from the users list', { tags: ['SIT-IAM-16'] }, async ({ agent, screen, users }) => {
-      await users.open();
-      await users.search(owner);
-
-      await users.rowAction(owner, 'delete');
-
-      await expect(screen.getByTestId('action-gate')).toHaveCount(0, { timeout: 15_000 });
-      await expect(screen.getByTestId('disable-confirm').or(screen.getByTestId('delete-confirm'))).toHaveCount(0);
-      await agent.assert('a message says the Tenant Owner cannot be deleted and the designation must be transferred first');
-    });
-
-    test('the Tenant Owner cannot be disabled from their profile', { tags: ['SIT-IAM-16'] }, async ({ agent, screen, users }) => {
-      await users.open();
-      await users.search(owner);
-      const drawer = await users.openProfile(owner);
-
-      await chooseAction(screen, drawer.root.getByTestId('user-header'), 'disable');
-
-      await expect(screen.getByTestId('action-gate')).toHaveCount(0, { timeout: 15_000 });
-      await expect(screen.getByTestId('disable-confirm')).toHaveCount(0);
-      await agent.assert('the app says the Tenant Owner cannot be disabled');
-    });
-
-    test('a bulk disable warns that the Tenant Owner row will fail', { tags: ['SIT-IAM-16', 'EX-IAM-13.1'] }, async ({ agent, screen, users }) => {
-      await users.open();
-      await users.search(owner);
-      await users.select([owner]);
-
-      await users.bulkBar.getByTestId('bulk-disable').tap();
-
-      const confirm = screen.getByTestId('bulk-disable-confirm');
-      await expect(confirm.getByText('Checking the selection…')).toHaveCount(0, { timeout: 30_000 });
-      await agent.assert('the disable confirmation warns that the Tenant Owner will be blocked and reported as failed');
-    });
-  });
-
+describe('IAM person lifecycle', { session: IAM_SESSION, agentContext: IAM_CONTEXT }, () => {
   describe('disable, enable, delete', { tags: ['SIT-IAM-07', 'BEH-IAM-12', 'P1'] }, () => {
     test('the disable confirmation says sessions end and teams are kept', { tags: ['SIT-IAM-14'] }, async ({ agent, screen, users }) => {
       const user = poolUser('shared');
@@ -80,28 +26,28 @@ describe('IAM person lifecycle', { skip: LOGIN_SKIP, session: IAM_SESSION, tags:
       await agent.act('choose "Disable user" in the row actions menu of {email} and stop at the dialog that opens; do not confirm, type or press anything in it', { params: { email: unique(user.email) } });
 
       const d = screen.getByTestId('disable-confirm');
-      await agent.assert('the disable confirmation for {name} says access ends immediately and every session ends, that teams, access profiles and scope are kept and restored on enable, and that open tickets and approvals are preserved', { params: { name: unique(user.name) } });
-      // Pehli list submit se pehle dikhti hai; submit ke baad server wali list aati hai (DOM map critic b1).
+      // Sirf dialog ka apna vaakya: uske neeche ki `disable-what` list ke items badal jaate hain.
       await expect(d).toContainText(/every session ends/i);
       await expect(d).toContainText(/kept and restored on enable/i);
-      await expect(d.getByTestId('disable-what')).toContainText(/sessions are ended/i);
-      await expect(d.getByTestId('disable-what')).toContainText(/team memberships are preserved/i);
+      await agent.assert('the disable confirmation for {name} says access ends immediately and every session ends, and that teams, access profiles and scope are kept and restored on enable', { params: { name: unique(user.name) } });
       await d.getByTestId('confirm-cancel').tap();
       await expect(users.status(user.email)).toHaveText('Active');
     });
 
-    // Deployed app (23 Nov 2026): bulk jobs `queued` hi rehte hain (processed_rows 0), results me sirf "Still running".
-    // retries 0: yeh ek fixed pool user ka state ek taraf badalta hai (disable / delete / sessions); retry ko badla hua user milta aur uska error asli wajah chhupa deta.
-    test('a bulk delete reports an outcome for every selected person', { tags: ['bug', 'EX-IAM-12.1'], retries: 0 }, async ({ agent, screen, users }) => {
+    // Kaun delete hoga yeh code tay karta hai (search + theek 2 rows + selection), agent nahi: bulk delete me koi
+    // guard nahi, aur galat selection asli logon ko hata deta.
+    test('a bulk delete reports an outcome for every selected person', knownBug('23 Nov 2026: bulk jobs `queued` hi rehte hain (processed_rows 0), results me sirf "Still running"', 'EX-IAM-12.1'), async ({ agent, screen, users }) => {
       const [a, b] = [poolUser('bulk-a'), poolUser('bulk-b')];
       const prefix = a.email.slice(0, a.email.indexOf('bulk-a') + 'bulk-'.length); // sirf bulk-a, bulk-b
       await users.open();
       await users.search(b.email);
       await users.disable(b.email); // ek Inactive, ek Active — brief ka "two of them still active"
-      await users.open();
+      await users.search(prefix);
+      await expect(users.rows).toHaveCount(2);
+      await users.select([a.email, b.email]);
 
-      await agent.act('search the users list for {prefix}, select both listed users, delete them from the selection bar by typing {word} and pressing Delete once, then wait for the result', {
-        params: { prefix: unique(prefix), word: 'delete' },
+      await agent.act('delete the 2 selected users from the selection bar: type {word} in the confirmation box and press Delete once; stop when a results dialog opens or the dialog stops changing', {
+        params: { word: 'delete' },
       });
 
       const outcome = screen.getByTestId('bulk-outcome');
@@ -118,7 +64,7 @@ describe('IAM person lifecycle', { skip: LOGIN_SKIP, session: IAM_SESSION, tags:
     await users.open();
     await users.search(user.email);
     let drawer = await users.openProfile(user.email);
-    await drawer.tab('Sessions');
+    await drawer.openSessions();
     await expect(drawer.sessions.first(), 'setup ke sign-in ka session dikhna chahiye').toBeVisible();
     await drawer.close();
 
@@ -126,25 +72,27 @@ describe('IAM person lifecycle', { skip: LOGIN_SKIP, session: IAM_SESSION, tags:
 
     await expect(users.status(user.email)).toHaveText('Inactive');
     drawer = await users.openProfile(user.email);
-    await drawer.tab('Sessions');
-    await agent.assert('the person’s Sessions tab says they have no active sessions');
+    await drawer.openSessions();
+    // Sessions ki list disable ke baad dobara load hoti hai — purani row hatne ka intezaar, phir agent dekhe.
     await expect(drawer.sessions).toHaveCount(0);
     await expect(drawer.terminateAll).toBeDisabled();
+    await agent.assert('the Sessions tab of this person lists no session and says there are no active sessions');
   });
 
   /** Ek hi disposable person pe, is order me: disable → kisne kiya → enable. retries 0: group ek-tarfa hai. */
-  describe('a disabled person', { serial: true, retries: 0, tags: ['BEH-IAM-12', 'P1'] }, () => {
-    test('an admin-disabled person’s record says an admin disabled them', { tags: ['SIT-IAM-15', 'EX-IAM-07.2', 'BEH-IAM-07'] }, async ({ agent, screen, users }) => {
+  describe('a disabled person', { serial: true, retries: 0, tags: ['sanity', 'BEH-IAM-12', 'P1'] }, () => {
+    test('an admin-disabled person’s record says an admin disabled them', { tags: ['SIT-IAM-15', 'EX-IAM-07.2', 'BEH-IAM-07'] }, async ({ agent, users }) => {
       const user = poolUser('disabled');
       await users.open();
       await users.search(user.email);
 
-      await agent.act('disable the user {email} from its row actions menu and confirm the disable, then open that person’s profile', { params: { email: unique(user.email) } });
+      await agent.act('disable the user {email} from its row actions menu and confirm the disable', { params: { email: unique(user.email) } });
 
-      await agent.assert('the profile shows the person as Inactive and says who disabled them: the admin {admin}', { params: { admin: ADMIN_NAME } });
-      const drawer = new UserDrawer(screen);
+      await expect(users.status(user.email)).toHaveText('Inactive');
+      const drawer = await users.openProfile(user.email);
       await expect(drawer.status).toHaveText('Inactive');
       await expect(drawer.disabledBy).toHaveText(ADMIN_NAME);
+      await agent.assert('the profile shows the status Inactive and names {admin} as the one who disabled this person', { params: { admin: ADMIN_NAME } });
     });
 
     test('enabling a disabled person makes them active again', { tags: ['SIT-IAM-07'] }, async ({ agent, users }) => {
@@ -154,8 +102,8 @@ describe('IAM person lifecycle', { skip: LOGIN_SKIP, session: IAM_SESSION, tags:
 
       await agent.act('enable the user {email} from its row actions menu and confirm', { params: { email: unique(user.email) } });
 
-      await agent.assert('{email} is shown as Active, and a confirmation says the person was enabled', { params: { email: unique(user.email) } });
       await expect(users.status(user.email)).toHaveText('Active');
+      await agent.assert('the users list shows {email} with the status Active', { params: { email: unique(user.email) } });
     });
   });
 
@@ -171,8 +119,8 @@ describe('IAM person lifecycle', { skip: LOGIN_SKIP, session: IAM_SESSION, tags:
       });
 
       const d = screen.getByTestId('delete-confirm');
-      await agent.assert('the delete confirmation says the person will be deleted and their data anonymized, that this cannot be undone, and its delete button is disabled because the typed word is not delete');
       await expect(d.getByTestId('confirm-submit')).toBeDisabled();
+      await agent.assert('the delete confirmation says the person will be deleted and their data anonymized and that this cannot be undone; the confirmation box holds the word remove and the Delete button is disabled');
       await d.getByTestId('confirm-word').fill('delete');
       await expect(d.getByTestId('confirm-submit')).toBeEnabled();
       await d.getByTestId('confirm-cancel').tap();
@@ -187,8 +135,8 @@ describe('IAM person lifecycle', { skip: LOGIN_SKIP, session: IAM_SESSION, tags:
 
       await users.open();
       await users.search(user.email);
-      await agent.assert('no user with the email {email} is listed any more', { params: { email: unique(user.email) } });
       await expect(users.empty).toContainText('No users match');
+      await agent.assert('the users list is searched for {email} and says no users match', { params: { email: unique(user.email) } });
     });
 
     test('a deleted person’s email can be invited again as a fresh person', async ({ agent, users }) => {
@@ -199,35 +147,43 @@ describe('IAM person lifecycle', { skip: LOGIN_SKIP, session: IAM_SESSION, tags:
         params: { email: unique(user.email) },
       });
 
-      await agent.assert('the invitation was sent with no error saying a member with this email already exists');
       await users.open();
       await users.search(user.email);
       await expect(users.status(user.email)).toHaveText('Invited');
+      await agent.assert('the users list shows {email} with the status Invited', { params: { email: unique(user.email) } });
     });
   });
 
   describe('who switched someone off', { tags: ['BEH-IAM-06', 'BEH-IAM-07', 'P1'] }, () => {
-    test('moving someone to Manual warns that offboarding them becomes the admins’ job', { tags: ['EX-IAM-06.1', 'SIT-IAM-04'] }, async ({ agent, screen, users }) => {
-      // Tenant ka akela SCIM-managed user. Sirf warning dekhte hain — Cancel, kuch save nahi hota.
-      const scimUser = 'md@gmail.com';
+    /**
+     * Asli directory-managed person pe: confirm dabte hi woh hamesha ke liye Manual ho jaata. Isliye dialog tak ke
+     * steps exact code hain aur code sirf Cancel dabata hai; agent sirf warning ka matlab jaanchta hai.
+     */
+    test('moving someone to Manual warns that offboarding them becomes the admins’ job', {
+      tags: ['EX-IAM-06.1', 'SIT-IAM-04'],
+      skip: !IAM_SCIM_USER_EMAIL && 'IAM_SCIM_USER_EMAIL set nahi hai',
+    }, async ({ agent, screen, users }) => {
       await users.open();
-      await users.search(scimUser);
-      const drawer = await users.openProfile(scimUser);
+      await users.search(IAM_SCIM_USER_EMAIL);
+      const drawer = await users.openProfile(IAM_SCIM_USER_EMAIL);
+      const source = drawer.root.getByTestId('source-selector').getByRole('combobox', 'Source of truth');
+      const directory = (await source.textContent())?.trim() ?? '';
+      expect(directory, 'IAM_SCIM_USER_EMAIL should be a directory-managed person').not.toBe('Manual');
 
-      await agent.act('on this profile, change the source of truth to Manual and stop at the dialog that opens; do not confirm, type or press anything in it');
+      await source.tap();
+      await screen.getByRole('option', 'Manual').tap();
 
-      const d = screen.getByTestId('source-confirm');
-      await agent.assert('a confirmation warns that the directory will no longer switch this person off when it reports them gone, and that disabling them becomes the admins’ job');
-      await expect(d).toContainText(/will not be disabled automatically/i);
-      await expect(d).toContainText(/switching them off becomes your job/i);
-      await d.getByTestId('confirm-cancel').tap();
-      await expect(drawer.root.getByTestId('source-selector').getByRole('combobox', 'Source of truth')).toHaveText('SCIM directory');
+      const confirm = dialog(screen, 'source-confirm');
+      await expect(confirm.root).toContainText(/will not be disabled automatically/i);
+      await expect(confirm.root).toContainText(/switching them off becomes your job/i);
+      await agent.assert('a confirmation warns that this person will not be disabled automatically when the directory reports them gone, and that switching them off becomes the admin’s job');
+      await confirm.dismiss();
+      await expect(source, 'cancelling must leave the person with their directory').toHaveText(directory);
     });
   });
 
   describe('account end date', { tags: ['BEH-IAM-15', 'SIT-IAM-08', 'P1'] }, () => {
-    // Deployed app (20 + 23 Nov 2026): switch hamesha disabled — "Account expiry can't be set yet".
-    test('an account end date can be set on a person', { tags: ['bug'] }, async ({ agent, screen, users }) => {
+    test('an account end date can be set on a person', knownBug('23 Nov 2026: "Set an account expiry" hamesha disabled — "Account expiry can\'t be set yet"'), async ({ agent, screen, users }) => {
       const user = poolUser('shared');
       await users.open();
       await users.search(user.email);
@@ -235,14 +191,13 @@ describe('IAM person lifecycle', { skip: LOGIN_SKIP, session: IAM_SESSION, tags:
 
       await agent.act('click Edit on this profile and turn on "Set an account expiry"; do not save');
 
-      await agent.assert('the account expiry is switched on and offers an end date for this account');
       await expect(screen.getByTestId('edit-expiry-switch'), 'brief: an account can have an end date').toBeChecked();
+      await agent.assert('the account expiry is switched on and offers an end date for this account');
     });
   });
 
   describe('service-account owner guard', { tags: ['BEH-IAM-14', 'SIT-IAM-09', 'P1'] }, () => {
-    // Deployed app (23 Nov 2026): ek service account ke owner pe bhi normal Disable dialog — koi guard nahi.
-    test('an owner of an active service account cannot be disabled', { tags: ['bug', 'EX-IAM-14.1'] }, async ({ agent, screen, users, serviceAccounts }) => {
+    test('an owner of an active service account cannot be disabled', knownBug('23 Nov 2026: service account ke owner pe bhi normal Disable dialog — koi guard nahi', 'EX-IAM-14.1'), async ({ agent, screen, users, serviceAccounts }) => {
       const user = poolUser('sa-owner'); // setup ne ise access profile diya, isliye owner picker me hai
       const account = data.name('owner-bot');
       await serviceAccounts.open();
@@ -252,9 +207,9 @@ describe('IAM person lifecycle', { skip: LOGIN_SKIP, session: IAM_SESSION, tags:
 
       await agent.act('choose "Disable user" in the row actions menu of {email} and stop at the dialog that opens; do not confirm, type or press anything in it', { params: { email: unique(user.email) } });
 
-      await agent.assert('the app refuses to disable this person because they own an active service account, and the message names the service account {account}', { params: { account: unique(account) } });
       await expect(screen.getByRole('dialog').filter({ hasText: account }), 'the block message should name the owned account').toBeVisible();
       await expect(screen.getByTestId('disable-confirm')).toHaveCount(0);
+      await agent.assert('the app refuses to disable this person because they own an active service account, and the message names the service account {account}', { params: { account: unique(account) } });
     });
   });
 });

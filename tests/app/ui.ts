@@ -4,31 +4,17 @@ import type { WebFixtures } from '@e2e-dev/web';
 
 /**
  * Motadata console ka UI kit — har module ke page objects isi pe bante hain. Locators deployed app ke
- * DOM maps se hain (tmp/dom/maps/*.md):
- * har dialog, menu, toast aur drawer `<main>` ke bahar portal me render hota hai, aur `confirm-submit`,
- * `row-actions-trigger`, `row-actions-menu` jaise test ids har jagah dohraaye jaate hain — isliye har
- * locator pehle apne dialog/row ke andar scope hota hai.
+ * test ids se hain: har dialog, menu, toast aur drawer `<main>` ke bahar portal me render hota hai, aur
+ * `confirm-submit`, `row-actions-trigger`, `row-actions-menu` jaise test ids har jagah dohraaye jaate hain —
+ * isliye har locator pehle apne dialog/row ke andar scope hota hai.
  */
 export type Ctx = Pick<TestFixtures & WebFixtures, 'app' | 'browser' | 'screen'>;
 
-/** localStorage ki woh key jisme setup app ki sessionStorage (login) ki copy rakhta hai — auth.ts dekho. */
-export const SESSION_STORAGE_COPY = 'e2e.sessionStorage';
-
-const restoring = new WeakSet<object>();
-
 /**
- * Saved session ke saath `path` kholo: page ke apne scripts se pehle sessionStorage wapas, phir tab tak
- * ruko jab tak ya to page ka heading dikhe ya sign-in page — dono me se jo bhi pehle aaye — aur sign-in
- * aaya ho to saaf message ke saath fail.
+ * Saved session ke saath `path` kholo: tab tak ruko jab tak ya to page ka heading dikhe ya sign-in page —
+ * dono me se jo bhi pehle aaye — aur sign-in aaya ho to saaf message ke saath fail.
  */
-export async function openPage({ app, browser, screen }: Ctx, path: string, heading?: string): Promise<void> {
-  if (!restoring.has(browser)) {
-    restoring.add(browser);
-    await browser.addInitScript((key: string) => {
-      const copy = localStorage.getItem(key);
-      if (copy) for (const [k, v] of Object.entries(JSON.parse(copy) as Record<string, string>)) sessionStorage.setItem(k, v);
-    }, SESSION_STORAGE_COPY);
-  }
+export async function openPage({ app, screen }: Ctx, path: string, heading?: string): Promise<void> {
   await app.open(path);
   const signIn = screen.getByRole('button', 'Email me a sign-in code');
   const page = heading ? screen.getByRole('heading', heading, { visible: true }) : screen.getByRole('main');
@@ -38,7 +24,7 @@ export async function openPage({ app, browser, screen }: Ctx, path: string, head
 }
 
 /** Data server se aata hai: tab tak ruko jab tak koi "Loading …" status na bache. */
-async function pageLoaded(screen: Screen): Promise<void> {
+export async function pageLoaded(screen: Screen): Promise<void> {
   await screen.getByRole('main').waitFor();
   await expect(screen.getByRole('status', /^Loading/)).toHaveCount(0, { timeout: 30_000 });
 }

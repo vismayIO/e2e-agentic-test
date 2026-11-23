@@ -8,7 +8,7 @@
 import { env } from './env.ts';
 
 interface Code { value: string }
-interface Message { subject?: string; text?: { codes?: Code[] }; html?: { codes?: Code[] } }
+interface Message { text?: { codes?: Code[] }; html?: { codes?: Code[] } }
 
 export function mailosaurConfigured(): boolean {
   return Boolean(env('MAILOSAUR_API_KEY') && env('MAILOSAUR_SERVER_ID'));
@@ -58,9 +58,4 @@ async function waitForMessage<T>(sentTo: string, since: Date, timeoutMs: number,
 /** `since` ke baad aaye emails me se sabse naya jisme sign-in code ho — bina code wale (jaise invitation) chhod ke. */
 export function latestCode(sentTo: string, since: Date, timeoutMs = 60_000): Promise<string> {
   return waitForMessage(sentTo, since, timeoutMs, 'code wala email', (msg) => msg.text?.codes?.[0]?.value ?? msg.html?.codes?.[0]?.value);
-}
-
-/** `since` ke baad `sentTo` ko koi bhi email aa jaaye (jaise invitation) — uska subject lautao. */
-export function waitForEmail(sentTo: string, since: Date, timeoutMs = 120_000): Promise<string> {
-  return waitForMessage(sentTo, since, timeoutMs, 'koi email', (msg) => msg.subject ?? '');
 }

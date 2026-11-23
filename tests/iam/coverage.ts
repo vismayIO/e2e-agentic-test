@@ -1,6 +1,6 @@
 /**
  * Brief ids (docs/iam/acceptance-brief.md) the IAM suite does not automate, or only partly, and why.
- * `npm run coverage -- iam` fails if a brief id has neither a tagged test nor an entry here.
+ * `npm run verify` fails if a brief id has neither a tagged test nor an entry here.
  * Keep each reason concrete: what is missing (data, permission, infrastructure) — not "hard to test".
  */
 export const GAPS: Readonly<Record<string, string>> = {
@@ -31,11 +31,17 @@ export const GAPS: Readonly<Record<string, string>> = {
   'EX-IAM-05.1': 'needs a second admin signed in while their profile to a client org expires',
   'EX-IAM-18.1': 'needs a second admin with partial reach over client orgs',
 
-  // Custom fields: "Create attribute" is disabled for the test admin (user_attribute.manage).
-  'SIT-IAM-13': 'Create attribute is disabled for the test admin; MSP→client fields also need the client-org (acme) view',
-  'BEH-IAM-27': 'Create attribute is disabled for the test admin (tests exist, skipped until IAM_ATTRIBUTES_ENABLED=1)',
+  // Custom fields: "Create attribute" is disabled for the test admin (user_attribute.manage), so no tests exist yet.
+  'SIT-IAM-13': 'Create attribute is disabled for the test admin, so no tests exist yet; MSP→client fields also need the client-org (acme) view',
+  'BEH-IAM-27': 'Create attribute is disabled for the test admin, so no tests exist yet',
   'BEH-IAM-28': 'needs MSP fields (Create attribute is disabled) and the client-org (acme) view, not mapped yet',
-  'EX-IAM-27.1': 'Create attribute is disabled for the test admin (test exists, skipped until IAM_ATTRIBUTES_ENABLED=1)',
+  'EX-IAM-27.1': 'Create attribute is disabled for the test admin, so no tests exist yet',
+
+  // Tenant Owner: the guards are not automated. The block messages were never observed (no owner account to
+  // look at), and the only way to exercise them is on the tenant's real Tenant Owner — a broken guard would
+  // disable or rename that person. Automate with a dedicated test tenant whose owner is disposable.
+  'BEH-IAM-13': 'Tenant Owner guards (disable, delete, bulk, import) need a tenant whose Tenant Owner is a disposable test account',
+  'EX-IAM-13.1': 'needs a tenant whose Tenant Owner is a disposable test account (bulk action including the owner)',
 
   // Not observable from the console UI.
   'BEH-IAM-04': 'no Tier 3 (fresh email code) action found in the console to exercise',
@@ -46,7 +52,7 @@ export const GAPS: Readonly<Record<string, string>> = {
   'SIT-IAM-15': 'partly: role holders and who-disabled are automated; audit history by date is not in the UI',
 
   // Partly automated situations: the rest of the story needs time, directories or other modules.
-  'SIT-IAM-01': 'partly: invite, domain warning, owner guards; invitation expiry and first sign-in of the invitee are not',
+  'SIT-IAM-01': 'partly: invite and domain warning; Tenant Owner guards, invitation expiry and first sign-in of the invitee are not',
   'SIT-IAM-07': 'partly: disable/enable/delete; reassignment of open work belongs to Tickets/Approvals',
   'SIT-IAM-08': 'partly: expiry indicators; access ending on the date needs time to pass',
   'SIT-IAM-09': 'partly: owner guard and credentials; directory-blocked disables need SCIM/LDAP',
@@ -54,7 +60,7 @@ export const GAPS: Readonly<Record<string, string>> = {
   'EX-IAM-10.1': 'partly: no role column and disabled-stays-disabled; "admin without role permission" needs a second admin role',
   'SIT-IAM-11': 'partly: profile/role edits on one tenant; reach changes across clients need client orgs',
   'SIT-IAM-14': 'partly: ending sessions; IdP password reset is outside the platform',
-  'SIT-IAM-16': 'partly: owner guards; ownership transfer with a fresh code is a Tenant Management flow',
+  'SIT-IAM-16': 'partly: service-account reassignment; Tenant Owner guards need a disposable owner, and ownership transfer is a Tenant Management flow',
   'BEH-IAM-15': 'partly: expiring indicators and Invited rows; access ending on its date needs time to pass',
   'EX-IAM-15.1': 'needs an assignment whose end date has already passed',
   'BEH-IAM-17': 'needs a person holding one role both directly and through a team',

@@ -1,44 +1,54 @@
-# Nightly AI QA — deployed frontend ko har raat test karta hai aur HTML report banata hai.
+# Motadata console ka AI QA — har raat poori pipeline, aur haath se koi bhi suite (docs/testing.md).
 #
 # Settings → Secrets and variables → Actions:
-#   Variables : APP_URL (zaroori), APP_NAME, AZURE_OPENAI_DEPLOYMENT
-#   Secrets   : model key (AZURE_API_KEY + AZURE_RESOURCE_NAME, ya ANTHROPIC_API_KEY / OPENAI_API_KEY)
-#               E2E_USER_QA_USERNAME / E2E_USER_QA_PASSWORD   (login wale tests ke liye, optional)
+#   Variables : APP_URL, APP_ADMIN_EMAIL, MAILOSAUR_SERVER_ID (teeno zaroori), APP_NAME, AZURE_OPENAI_DEPLOYMENT
+#   Secrets   : model key (AZURE_API_KEY + AZURE_RESOURCE_NAME, ya ANTHROPIC_API_KEY / OPENAI_API_KEY / AI_GATEWAY_API_KEY)
+#               MAILOSAUR_API_KEY                             (console admin ka sign-in code — iske bina admin setup fail, run red)
 #               BASIC_AUTH_USERNAME / BASIC_AUTH_PASSWORD     (staging basic auth ho to, optional)
 #               SLACK_WEBHOOK_URL / TEAMS_WEBHOOK_URL         (notification, optional)
-#               MAILOSAUR_API_KEY                             (console admin ka OTP, sab modules; vars: APP_ADMIN_EMAIL, MAILOSAUR_SERVER_ID)
 
 name: nightly-qa
+run-name: ${{ inputs.suite || 'nightly' }} ${{ inputs.module }}
 
 on:
   schedule:
     - cron: '17 20 * * *' # roz 20:17 UTC = 1:47 AM IST
   workflow_dispatch:
     inputs:
+      suite:
+        description: 'Kya chalana hai (nightly = poori pipeline)'
+        type: choice
+        # lib/suites.ts ke RUNNABLE, `retest` ke bina: use pichhle run ka report.json
+        # usi machine pe chahiye (naye runner pe nahi hota) — CI me failed job dobara chalao.
+        options: [nightly, smoke, sanity, regression, bugs, explore, monkey]
+        default: nightly
+      module:
+        description: 'Module, jaise iam (khaali = sab). nightly hamesha sab modules chalata hai.'
+        required: false
       app_url:
         description: 'Kisi aur URL pe chalana ho (khaali = vars.APP_URL)'
         required: false
-      only:
-        description: 'Sirf ek hissa'
-        type: choice
-        options: [all, regression, explore]
-        default: all
 
 permissions:
   contents: read
 
+# Ek shared tenant aur ek hi admin login: CI ke runs ek ke baad ek (tenant pe load kam; do sign-in codes na takraayein).
 concurrency:
   group: nightly-qa
   cancel-in-progress: false
 
 jobs:
-  nightly:
+  qa:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # Nightly ki stages ki apni time limits hain (nightly.config.ts: smoke 10 + regression 45 + 6 charters × 8 = 103 min);
+    # job ka timeout unke jod + install se upar — CI job ko maare to report nahi banti.
+    timeout-minutes: 130
     env:
       E2E_TELEMETRY_DISABLED: '1'
       APP_URL: ${{ inputs.app_url || vars.APP_URL }}
       APP_NAME: ${{ vars.APP_NAME }}
+      MAILOSAUR_SERVER_ID: ${{ vars.MAILOSAUR_SERVER_ID }} # test addresses isi inbox ke: `npm test` ko bhi chahiye
+      SUITE: ${{ inputs.suite || 'nightly' }} # schedule pe inputs nahi hote
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -48,6 +58,11 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      # Typecheck + verify (tags, brief coverage, charters): app nahi khulta, model call nahi, koi secret nahi
+      # (sirf APP_URL aur MAILOSAUR_SERVER_ID variables, jo tests collect hote waqt padhe jaate hain).
+      # Galat tag ya charter yahin pakdo, raat ke run ke beech me nahi.
+      - run: npm test
 
       - name: Cache Playwright browsers
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -60,15 +75,23 @@ jobs:
 
       # Pichhli raaton ka history.json → report me trend
       - name: Restore history
+        if: ${{ env.SUITE == 'nightly' }}
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .nightly-history
           key: nightly-history-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: nightly-history-
 
-      - name: Run nightly QA
-        run: node scripts/nightly.ts ${{ (inputs.only && inputs.only != 'all') && format('--only {0}', inputs.only) || '' }}
+      # MODULE env se aata hai (input seedha script me nahi), aur bina quotes ke: khaali = sab modules, "iam tickets" = do.
+      - name: Run ${{ env.SUITE }}
+        run: |
+          if [ "$SUITE" = nightly ]; then
+            node scripts/nightly.ts
+          else
+            node scripts/suite.ts "$SUITE" $MODULE
+          fi
         env:
+          MODULE: ${{ inputs.module }}
           # --- Model (jo use karte ho bas wahi) ---
           AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
           AZURE_RESOURCE_NAME: ${{ secrets.AZURE_RESOURCE_NAME }}
@@ -76,21 +99,24 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
-          # --- App login / staging protection (optional) ---
+          # --- Console admin login (sign-in code Mailosaur se) / staging protection ---
           APP_ADMIN_EMAIL: ${{ vars.APP_ADMIN_EMAIL }}
+          APP_ADMIN_NAME: ${{ vars.APP_ADMIN_NAME }}
           MAILOSAUR_API_KEY: ${{ secrets.MAILOSAUR_API_KEY }}
-          MAILOSAUR_SERVER_ID: ${{ vars.MAILOSAUR_SERVER_ID }}
-          E2E_USER_QA_USERNAME: ${{ secrets.E2E_USER_QA_USERNAME }}
-          E2E_USER_QA_PASSWORD: ${{ secrets.E2E_USER_QA_PASSWORD }}
+          # --- Optional (README → IAM): na hon to sirf woh tests skip ---
+          IAM_SCIM_USER_EMAIL: ${{ vars.IAM_SCIM_USER_EMAIL }}
+          IAM_TEAM: ${{ vars.IAM_TEAM }}
+          IAM_TEAM_MEMBER_EMAIL: ${{ vars.IAM_TEAM_MEMBER_EMAIL }}
           BASIC_AUTH_USERNAME: ${{ secrets.BASIC_AUTH_USERNAME }}
           BASIC_AUTH_PASSWORD: ${{ secrets.BASIC_AUTH_PASSWORD }}
-          # --- Notification (optional) ---
+          # --- Notification (nightly; optional) ---
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
           NOTIFY_ON: always # ya: problems
 
+      # always(): run red ho to bhi report upload ho
       - name: Save history
-        if: ${{ !cancelled() }}
+        if: ${{ always() && env.SUITE == 'nightly' }}
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .nightly-history
@@ -98,10 +124,25 @@ jobs:
 
       # Download karke index.html kholo (raw/ folder saath me rehna chahiye)
       - name: Upload report
-        if: ${{ !cancelled() }}
+        if: ${{ always() && env.SUITE == 'nightly' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: nightly-report-${{ github.run_number }}
           path: nightly-report
           if-no-files-found: warn
           retention-days: 30
+
+      # Baaki suites: e2e ka apna output (report.json, junit.xml, report.html, results/ me traces + screenshots).
+      # sessions/ (saved logins) kabhi upload nahi; cache/ repo me commit hai.
+      - name: Upload e2e output
+        if: ${{ !cancelled() && env.SUITE != 'nightly' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-${{ env.SUITE }}-${{ github.run_number }}
+          path: |
+            .e2e
+            !.e2e/**/sessions/**
+            !.e2e/cache/**
+          include-hidden-files: true # .e2e dot-folder hai
+          if-no-files-found: warn
+          retention-days: 7

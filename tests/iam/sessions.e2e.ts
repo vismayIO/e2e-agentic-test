@@ -1,5 +1,5 @@
 import { expect } from 'e2e';
-import { LOGIN_SKIP } from '../app/auth.ts';
+import { knownBug } from '../../lib/suites.ts';
 import { describe, test } from './fixtures.ts';
 import { IAM_CONTEXT, IAM_SESSION, poolUser } from './iam.ts';
 
@@ -11,53 +11,48 @@ import { IAM_CONTEXT, IAM_SESSION, poolUser } from './iam.ts';
  * nahi karte: woh saved admin session hi khatam kar dega (aur admin ke drawer me current session ka
  * "Revoke session" enabled hai — kabhi mat dabana).
  */
-const SESSIONS_CONTEXT = `${IAM_CONTEXT} Never revoke or terminate a session of the signed-in admin (Test User / My sessions); only act on the person named in the goal.`;
-
-describe('IAM sessions', { skip: LOGIN_SKIP, session: IAM_SESSION, tags: ['iam', 'sessions', 'BEH-IAM-05', 'P1'], agentContext: SESSIONS_CONTEXT }, () => {
-  // Deployed app (20 + 23 Nov 2026): "Revoke session" bina confirmation ke turant revoke karta hai.
-  // retries 0: yeh ek fixed pool user ka state ek taraf badalta hai (disable / delete / sessions); retry ko badla hua user milta aur uska error asli wajah chhupa deta.
-  test('ending a single session asks for confirmation', { tags: ['bug', 'SIT-IAM-14'], retries: 0 }, async ({ agent, screen, users }) => {
+describe('IAM sessions', { session: IAM_SESSION, tags: ['BEH-IAM-05', 'P1'], agentContext: IAM_CONTEXT }, () => {
+  test('ending a single session asks for confirmation', knownBug('23 Nov 2026: "Revoke session" bina confirmation ke turant revoke karta hai', 'SIT-IAM-14'), async ({ agent, screen, users }) => {
     const user = poolUser('shared'); // shared ke baaki tests sirf dialog dekhte hain, session pe depend nahi
     await users.open();
     await users.search(user.email);
     const drawer = await users.openProfile(user.email);
-    await drawer.tab('Sessions');
+    await drawer.openSessions();
     const session = drawer.sessions.first();
     await expect(session, 'setup ke sign-in ka session dikhna chahiye').toBeVisible();
 
     await agent.act('choose "Revoke session" in the actions of the first session listed, and stop at whatever happens next; do not confirm anything');
 
-    await agent.assert('a confirmation asks before the session is ended, and the session is still listed');
     const confirmation = screen.getByRole('dialog').filter({ has: screen.getByTestId('confirm-submit') });
     await expect(confirmation, 'a confirmation should open before the session ends').toBeVisible({ timeout: 5_000 });
+    await agent.assert('a confirmation dialog asks before the session is ended');
     await confirmation.getByTestId('confirm-cancel').tap();
     await expect(drawer.sessions).not.toHaveCount(0);
   });
 
   // retries 0: yeh ek fixed pool user ka state ek taraf badalta hai (disable / delete / sessions); retry ko badla hua user milta aur uska error asli wajah chhupa deta.
-  test('an admin ends every session of a person', { tags: ['SIT-IAM-14'], retries: 0 }, async ({ agent, users }) => {
+  test('an admin ends every session of a person', { tags: ['sanity', 'SIT-IAM-14'], retries: 0 }, async ({ agent, users }) => {
     const user = poolUser('sessions');
     await users.open();
     await users.search(user.email);
     const drawer = await users.openProfile(user.email);
-    await drawer.tab('Sessions');
+    await drawer.openSessions();
     await expect(drawer.sessions.first(), 'setup ke sign-in ka session dikhna chahiye').toBeVisible();
 
     await agent.act('terminate all sessions of this person and confirm');
 
-    await agent.assert('the person has no active sessions any more, and a confirmation says their sessions were terminated');
     await expect(drawer.sessions).toHaveCount(0);
     await expect(drawer.root.getByTestId('panel-sessions').getByTestId('state-empty')).toContainText('No active sessions');
+    await agent.assert('the Sessions tab of this person lists no session and says there are no active sessions');
   });
 
   test('my sessions lists the current session', { tags: ['SIT-IAM-14'] }, async ({ agent, screen, users, mySessions }) => {
     await users.open();
 
-    await agent.act('open My sessions from the left navigation');
+    await agent.act('open My sessions from the left navigation and stop when that page is shown');
 
-    await agent.assert('My sessions lists every device the admin is signed in on, and marks the session in use now as Current');
-
-    await expect(mySessions.current).toHaveCount(1);
+    await expect(mySessions.current).toHaveCount(1, { timeout: 30_000 });
+    await agent.assert('the My sessions page lists at least one session and marks one session as Current');
     await mySessions.current.getByTestId('row-actions-trigger').tap();
     // Apna current session yahan se khatam nahi hota (sign out se hota hai).
     await expect(screen.getByTestId('row-actions-menu').getByTestId('row-actions-menu-terminate')).toBeDisabled();

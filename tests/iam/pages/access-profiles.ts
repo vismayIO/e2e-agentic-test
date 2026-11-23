@@ -3,22 +3,22 @@ import { expect } from 'e2e';
 import { type Ctx, Dialog, ListPage, chooseAction, dialog, openPage, toast } from '../../app/ui.ts';
 
 /** Tenant ki apni organization ka naam profile form me (list aur drawer me yahi "motadata" dikhta hai). */
-export const OWN_ORG = 'MSP owner organization';
+const OWN_ORG = 'MSP owner organization';
 
-export type Expiry = 'permanent' | 'd7' | 'd30' | 'd90' | 'y1';
+type Expiry = 'permanent' | 'd7' | 'd30' | 'd90' | 'y1';
 
-/** Add holders ka expiry block (Change expiry me bhi wahi, `change-expiry-` prefix ke saath). */
-async function setExpiry(scope: Locator, prefix: 'add-holders-expiry', expiry: Expiry): Promise<void> {
-  const toggle = scope.getByTestId(`${prefix}-switch`);
+/** Add holders ka expiry block (`add-holders-expiry`): switch off = permanent, warna ek preset. */
+async function setExpiry(block: Locator, expiry: Expiry): Promise<void> {
+  const toggle = block.getByTestId('add-holders-expiry-switch');
   if (expiry === 'permanent') {
     await toggle.uncheck();
     return;
   }
   await toggle.check();
-  await scope.getByTestId(`${prefix}-${expiry}`).check();
+  await block.getByTestId(`add-holders-expiry-${expiry}`).check();
 }
 
-/** /access-profiles — list, create/edit form, profile drawer, delete dialog. DOM map: access-model.md (ACCESS PROFILES) */
+/** /access-profiles — list, create/edit form, profile drawer, delete dialog. */
 export class AccessProfilesPage extends ListPage {
   readonly form: Locator;
 
@@ -46,21 +46,16 @@ export class AccessProfilesPage extends ListPage {
   }
 
   /**
-   * Profile banao; app create ke baad uska drawer khud kholta hai — wahi lautao.
-   * `orgs: 'all'` = "Access to all organizations", warna tenant ki apni organization.
+   * Profile banao (diye hue roles, tenant ki apni organization); app create ke baad uska drawer khud kholta hai — wahi lautao.
    */
-  async create(name: string, { roles = ['Approver'], orgs = 'own' as 'own' | 'all' } = {}): Promise<ProfileDrawer> {
+  async create(name: string, { roles = ['Approver'] } = {}): Promise<ProfileDrawer> {
     await this.startCreate();
     await this.form.getByTestId('profile-name').fill(name);
     await this.pickRoles(roles);
-    if (orgs === 'all') {
-      await this.form.getByTestId('profile-all-orgs').check();
-    } else {
-      await this.form.getByTestId('profile-orgs-trigger').tap();
-      const popover = this.screen.getByTestId('profile-orgs-popover');
-      await popover.getByRole('button', OWN_ORG).tap();
-      await popover.getByTestId('profile-orgs-popover-search').press('Escape');
-    }
+    await this.form.getByTestId('profile-orgs-trigger').tap();
+    const popover = this.screen.getByTestId('profile-orgs-popover');
+    await popover.getByRole('button', OWN_ORG).tap();
+    await popover.getByTestId('profile-orgs-popover-search').press('Escape');
     await this.form.getByTestId('profile-submit').tap();
     await this.form.waitFor({ state: 'detached', timeout: 30_000 });
     await expect(toast(this.screen, `${name} created`)).toBeVisible();
@@ -129,7 +124,6 @@ export class ProfileDrawer {
     return this.root.getByTestId(/^holder-(direct|teams)$/).getByTestId(/^holder-\d+$/).filter({ hasText: text });
   }
 
-
   /**
    * Add teams / Add people → holder chuno → expiry → Assign. `match` = team naam ya person ka email;
    * holder list me person apne naam se dikhta hai, isliye `shownAs`.
@@ -141,13 +135,11 @@ export class ProfileDrawer {
     await add.getByTestId('holders-search').fill(match);
     await add.getByTestId('holders-list').getByRole('listitem').filter({ hasText: match }).getByRole('checkbox').check();
     await add.getByTestId('add-holders-next').tap();
-    await setExpiry(add.getByTestId('add-holders-expiry'), 'add-holders-expiry', expiry);
+    await setExpiry(add.getByTestId('add-holders-expiry'), expiry);
     await add.getByTestId('add-holders-submit').tap();
     await add.waitFor({ state: 'detached', timeout: 30_000 });
     await expect(this.holder(shownAs)).toBeVisible({ timeout: 15_000 });
   }
-
-
 
   async close(): Promise<void> {
     await this.root.getByRole('button', 'Close').tap();

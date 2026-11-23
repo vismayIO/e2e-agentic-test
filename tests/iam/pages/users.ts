@@ -2,7 +2,7 @@ import type { Locator, Screen } from 'e2e';
 import { expect } from 'e2e';
 import { type Ctx, Dialog, ListPage, chooseAction, dialog, openPage, toast } from '../../app/ui.ts';
 
-/** /users — members aur pending invitations ki list, row menus, bulk bar. DOM map: tmp/dom/maps/users-list.md */
+/** /users — members aur pending invitations ki list, row menus, bulk bar. */
 export class UsersPage extends ListPage {
   readonly bulkBar: Locator;
 
@@ -24,7 +24,7 @@ export class UsersPage extends ListPage {
     return this.row(email).getByTestId('status-badge');
   }
 
-  async rowAction(email: string, item: 'edit' | 'disable' | 'enable' | 'delete' | 'cancel-invite'): Promise<void> {
+  async rowAction(email: string, item: 'disable' | 'delete' | 'cancel-invite'): Promise<void> {
     await chooseAction(this.screen, this.row(email), item);
   }
 
@@ -40,7 +40,6 @@ export class UsersPage extends ListPage {
     await (await this.openDisable(email)).confirm();
     await expect(this.status(email)).toHaveText('Inactive');
   }
-
 
   /**
    * Delete ka confirm dialog tak. Active person pe app pehle Disable dialog dikhata hai ("Disable and
@@ -92,7 +91,7 @@ export class UsersPage extends ListPage {
   }
 }
 
-/** Profile drawer ("User management"). Drawer khula ho to tree me sirf yahi dikhta hai. DOM map: user-drawer.md */
+/** Profile drawer ("User management"). Drawer khula ho to tree me sirf yahi dikhta hai. */
 export class UserDrawer {
   readonly root: Locator;
   readonly disabledBy: Locator;
@@ -111,14 +110,10 @@ export class UserDrawer {
     this.terminateAll = this.root.getByTestId('terminate-all');
   }
 
-  async tab(name: 'About' | 'Access profiles' | 'Teams' | 'Sessions'): Promise<void> {
-    await this.root.getByRole('tab', name).tap();
+  async openSessions(): Promise<void> {
+    await this.root.getByRole('tab', 'Sessions').tap();
     await expect(this.screen.getByRole('status', /^Loading/)).toHaveCount(0, { timeout: 30_000 });
   }
-
-
-
-
 
 
   async close(): Promise<void> {

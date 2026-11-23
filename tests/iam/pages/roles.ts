@@ -1,7 +1,7 @@
 import { expect } from 'e2e';
 import { type Ctx, Dialog, ListPage, chooseAction, dialog, openPage, toast } from '../../app/ui.ts';
 
-/** /roles — list, builder (/roles/new), clone aur delete dialogs. DOM map: access-model.md (ROLES) */
+/** /roles — list, builder (/roles/new), clone aur delete dialogs. */
 export class RolesPage extends ListPage {
   constructor(fx: Ctx) {
     super(fx, fx.screen.getByTestId('roles-table'), { keyCell: (table) => table.getByTestId(/^role-name-\d+$/) });
@@ -30,7 +30,6 @@ export class RolesPage extends ListPage {
     await this.search(name);
     await expect(this.row(name)).toBeVisible();
   }
-
 
   /** Delete dialog: pehle "Reading what holds this role" load hota hai. */
   async openDelete(role: string): Promise<Dialog> {
