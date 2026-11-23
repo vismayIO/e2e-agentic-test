@@ -1,0 +1,142 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-23T10:00:56.073Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Row actions\" in \"E2E delete-mwt3azhzin\"",
+        "target": {
+          "role": "button",
+          "name": "Row actions",
+          "testId": "row-actions-trigger",
+          "within": "E2E delete-mwt3azhzin"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap menuitem \"Delete user\"",
+        "target": {
+          "role": "menuitem",
+          "name": "Delete user",
+          "testId": "row-actions-menu-delete"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Disable and continue\" in \"Disable E2E delete-mwt3azhzin\"",
+        "target": {
+          "role": "button",
+          "name": "Disable and continue",
+          "testId": "confirm-submit",
+          "within": "Disable E2E delete-mwt3azhzin"
+        }
+      },
+      {
+        "name": "type",
+        "summary": "type \"remove\" into textbox \"Type \\\"delete\\\" to confirm\" in \"Delete E2E delete-mwt3azhzin\"",
+        "target": {
+          "role": "textbox",
+          "name": "Type \"delete\" to confirm",
+          "testId": "confirm-word",
+          "within": "Delete E2E delete-mwt3azhzin"
+        },
+        "value": "remove"
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/users-lifecycle.e2e.ts::IAM%20person%20lifecycle::a%20deleted%20person::delete%20stays%20locked%20until%20the%20word%20delete%20is%20typed",
+      "targetId": "web",
+      "instructionDigest": "dd82ec95faedbe46792ce3c8eab2f7c61b0ccb105324028f3f78ffd9d8ec7dc3",
+      "paramsDigest": "fd668c41870aeec94612a40e0473a889e35d8bc7ff6282a6f66fdee22166f41c",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-sonnet-5-5"
+    },
+    "summary": "I chose Delete user, then Disable and continue (the user was disabled, with a toast). The delete dialog asks for the word \"delete\". I typed \"remove\" as the step said, and the Delete button is still disabled. I did not press Delete.",
+    "startPath": "/motadata/users",
+    "endPath": "/motadata/users",
+    "endAnchors": [
+      {
+        "text": "Type \"delete\" to confirm"
+      },
+      {
+        "role": "textbox",
+        "name": "Type \"delete\" to confirm",
+        "testId": "confirm-word",
+        "value": "remove"
+      },
+      {
+        "text": "Confirm stays disabled until you type delete."
+      },
+      {
+        "role": "button",
+        "name": "Cancel",
+        "testId": "confirm-cancel"
+      },
+      {
+        "role": "button",
+        "name": "Delete",
+        "testId": "confirm-submit"
+      },
+      {
+        "text": "Close"
+      },
+      {
+        "testId": "form-row"
+      },
+      {
+        "role": "button",
+        "name": "Close"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "MSP Wide View"
+      },
+      {
+        "name": "anything@vpjygxzu.mailosaur.net"
+      },
+      {
+        "role": "button",
+        "name": "Back to workspace"
+      },
+      {
+        "text": "Settings"
+      },
+      {
+        "role": "button",
+        "name": "Search"
+      },
+      {
+        "role": "textbox",
+        "name": "Search settings",
+        "placeholder": "Search settings"
+      },
+      {
+        "text": "⌘K"
+      },
+      {
+        "text": "People & Access"
+      }
+    ],
+    "endWaitMs": 13160,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "28aead529c0388db258d9613832efec5058e393b427c4c6ef8b5b79a72c87938"
+    }
+  }
+}

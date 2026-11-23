@@ -1,0 +1,140 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-23T10:00:11.498Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Row actions\" in \"E2E disabled-mwt3azhzin\"",
+        "target": {
+          "role": "button",
+          "name": "Row actions",
+          "testId": "row-actions-trigger",
+          "within": "E2E disabled-mwt3azhzin"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap menuitem \"Disable user\"",
+        "target": {
+          "role": "menuitem",
+          "name": "Disable user",
+          "testId": "row-actions-menu-disable"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Disable\" in \"Disable E2E disabled-mwt3azhzin\"",
+        "target": {
+          "role": "button",
+          "name": "Disable",
+          "testId": "confirm-submit",
+          "within": "Disable E2E disabled-mwt3azhzin"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap node \"E2E disabled-mwt3azhzin\" (2 of 2)",
+        "target": {
+          "name": "E2E disabled-mwt3azhzin",
+          "position": {
+            "index": 1,
+            "of": 2
+          }
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/users-lifecycle.e2e.ts::IAM%20person%20lifecycle::a%20disabled%20person::an%20admin-disabled%20person%E2%80%99s%20record%20says%20an%20admin%20disabled%20them",
+      "targetId": "web",
+      "instructionDigest": "83a3f905068f459cedd9c66fd66e135cc0ad5ab0ec41ac9051a7bc1d26a336f3",
+      "paramsDigest": "7112884177195e13665e56a453d5aafb0c1d41d6a459e1ee7fc4f9b315716f3b",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-sonnet-5-5"
+    },
+    "summary": "I disabled iam-e2e-mwt3azhzin-disabled@vpjygxzu.mailosaur.net from its row actions menu and confirmed. The toast read \"E2E disabled-mwt3azhzin disabled\" and the row status changed to Inactive. The profile drawer now shows Others > Status \"Inactive\" and \"Disabled by: Test User\" (testid disabled-by).",
+    "startPath": "/motadata/users",
+    "endPath": "/motadata/users",
+    "endAnchors": [
+      {
+        "text": "User management"
+      },
+      {
+        "role": "button",
+        "name": "Edit",
+        "testId": "user-edit"
+      },
+      {
+        "role": "button",
+        "name": "More actions",
+        "testId": "row-actions-trigger"
+      },
+      {
+        "text": "Phone number"
+      },
+      {
+        "text": "-",
+        "testId": "about-phone"
+      },
+      {
+        "text": "About"
+      },
+      {
+        "text": "Sessions"
+      },
+      {
+        "role": "heading",
+        "name": "User details"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "MSP Wide View"
+      },
+      {
+        "name": "anything@vpjygxzu.mailosaur.net"
+      },
+      {
+        "role": "button",
+        "name": "Back to workspace"
+      },
+      {
+        "text": "Settings"
+      },
+      {
+        "role": "button",
+        "name": "Search"
+      },
+      {
+        "role": "textbox",
+        "name": "Search settings",
+        "placeholder": "Search settings"
+      },
+      {
+        "text": "⌘K"
+      },
+      {
+        "text": "People & Access"
+      }
+    ],
+    "endWaitMs": 14320,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "28aead529c0388db258d9613832efec5058e393b427c4c6ef8b5b79a72c87938"
+    }
+  }
+}

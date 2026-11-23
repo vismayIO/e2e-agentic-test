@@ -8,7 +8,9 @@
     "nightly": "node scripts/nightly.ts",
     "explore": "e2e explore",
     "report": "node scripts/nightly.ts --report-only",
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p .",
+    "cost": "node scripts/cost-report.ts",
+    "coverage": "node scripts/verify-coverage.ts"
   },
   "keywords": [],
   "author": "",

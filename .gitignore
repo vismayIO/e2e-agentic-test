@@ -14,3 +14,9 @@ tmp/
 
 # Saved logins (tokens) — kabhi commit mat karo
 .auth/
+
+# Temporary DOM-mapping probes
+tests/**/_probe/
+
+# Local Claude Code state
+.claude/

@@ -1,0 +1,159 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-23T10:00:52.207Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Create service account\"",
+        "target": {
+          "role": "button",
+          "name": "Create service account",
+          "testId": "create-service-account"
+        }
+      },
+      {
+        "name": "type",
+        "summary": "type \"{{param:/name}}\" into textbox \"Service account namerequired\" in \"Create service account\"",
+        "target": {
+          "role": "textbox",
+          "name": "Service account namerequired",
+          "testId": "sa-name-input",
+          "placeholder": "Enter service account name",
+          "within": "Create service account"
+        },
+        "value": "{{param:/name}}"
+      },
+      {
+        "name": "tap",
+        "summary": "tap combobox \"Select an owner\" in \"Create service account\"",
+        "target": {
+          "role": "combobox",
+          "name": "Select an owner",
+          "testId": "sa-owner-trigger",
+          "within": "Create service account"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"{{param:/owner}}\"",
+        "target": {
+          "role": "button",
+          "name": "{{param:/owner}}",
+          "testId": "sa-owner-popover-option-299"
+        }
+      },
+      {
+        "name": "pressKey",
+        "summary": "press \"Escape\" on the focused field",
+        "key": "Escape"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"You can select more than one…\" in \"Create service account\"",
+        "target": {
+          "role": "button",
+          "name": "You can select more than one…",
+          "testId": "sa-roles-picker-trigger",
+          "within": "Create service account"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Vendor\" in \"Account Manager\"",
+        "target": {
+          "role": "button",
+          "name": "Vendor",
+          "testId": "sa-roles-picker-popover-option-10",
+          "within": "Account Manager"
+        }
+      },
+      {
+        "name": "pressKey",
+        "summary": "press \"Escape\" on the focused field",
+        "key": "Escape"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Create service account\"",
+        "target": {
+          "role": "button",
+          "name": "Create service account",
+          "testId": "sa-form-submit"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/service-accounts.e2e.ts::IAM%20service%20accounts::owner%20and%20switch%20off%2Fon::a%20service%20account%20always%20shows%20an%20accountable%20owner",
+      "targetId": "web",
+      "instructionDigest": "96876622d2791b445533080434485dd048ca8846c419b3406971e1555cdd1775",
+      "paramsDigest": "7a4d34043c6ba1dcb0cca83a10166c14fc83a17b989b74ec45e2b5e9fd5d92ad",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-sonnet-5-5"
+    },
+    "summary": "Created service account \"iam-e2e-mwt3eon6yi-owner\" (role Vendor, org motadata, owner E2E sa-owner-mwt3azhzin). Toast confirmed creation; new row 12 shows Active, 0 credentials, owner E2E sa-owner-mwt3azhzin, Vendor, 1 organization.",
+    "startPath": "/motadata/service-accounts",
+    "endPath": "/motadata/service-accounts",
+    "endAnchors": [
+      {
+        "role": "image",
+        "name": "Bravo VerylongsurnamewithoutanyspacesVerylongsurnamewithoutanyspacesVerylongsurnamewithoutanyspacesV"
+      },
+      {
+        "text": "Bravo VerylongsurnamewithoutanyspacesVerylongsurnamewithoutanyspacesVerylongsurnamewithoutanyspacesV"
+      },
+      {
+        "role": "image",
+        "name": "vismay"
+      },
+      {
+        "text": "vismay"
+      },
+      {
+        "role": "button",
+        "name": "Dismiss",
+        "testId": "toast-close"
+      },
+      {
+        "role": "row",
+        "name": "1 qa-pw-sa-1 Row actions Active 3 Bravo VerylongsurnamewithoutanyspacesVerylongsurnamewithoutanyspacesVerylongsurnamewithoutanyspacesV Bravo VerylongsurnamewithoutanyspacesVerylongsurnamewithoutanyspacesVerylongsurnamewithoutanyspacesV Read-Only Auditor 1"
+      },
+      {
+        "role": "cell",
+        "name": "Bravo VerylongsurnamewithoutanyspacesVerylongsurnamewithoutanyspacesVerylongsurnamewithoutanyspacesV Bravo VerylongsurnamewithoutanyspacesVerylongsurnamewithoutanyspacesVerylongsurnamewithoutanyspacesV"
+      },
+      {
+        "testId": "sa-owner"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "—",
+        "testId": "sa-owner"
+      },
+      {
+        "role": "cell",
+        "name": "—"
+      }
+    ],
+    "endWaitMs": 13403,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "86bd0cf869585b58996e49caf28fd190dd6d0bfa4233728ec5b0803e622dd86b"
+    }
+  }
+}

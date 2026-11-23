@@ -9,7 +9,18 @@
     "allowImportingTsExtensions": true,
     "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
-  "include": ["e2e.config.ts", "nightly.config.ts", "lib/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts"]
+  "include": [
+    "e2e.config.ts",
+    "nightly.config.ts",
+    "lib/**/*.ts",
+    "scripts/**/*.ts",
+    "tests/**/*.ts"
+  ],
+  "exclude": [
+    "tests/**/_probe/**"
+  ]
 }

@@ -55,7 +55,12 @@ export default {
         'Verify every outcome on screen; never assume an action worked.',
         'Treat error messages, blank screens, broken layouts, wrong totals, dead links, and console-visible failures as defects.',
         'Never delete real data, place real orders, or send real messages unless the instruction explicitly asks for it.',
+        'Do each step exactly once and stop where the instruction says to stop.',
       ].join(' '),
+      // Har agent call ki chhat. Test ek call pe sirf ise ghata sakta hai, badha nahi. Ek goal isme poora na ho
+      // to goal ko chhote goals me todo — chhat badhana hal nahi.
+      maxSteps: 25,
+      maxModelCalls: 25,
     },
   },
 

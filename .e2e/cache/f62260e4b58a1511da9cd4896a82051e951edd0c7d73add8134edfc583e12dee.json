@@ -1,0 +1,122 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-23T10:02:33.218Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Invite users\"",
+        "target": {
+          "role": "button",
+          "name": "Invite users",
+          "testId": "invite-users"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Import users Upload a file to add many …\" in \"Invite users\"",
+        "target": {
+          "role": "button",
+          "name": "Import users Upload a file to add many people at once.",
+          "testId": "invite-method-csv",
+          "within": "Invite users"
+        }
+      },
+      {
+        "name": "upload",
+        "summary": "upload \"tmp/iam-import/iam-e2e-mwt3j1quw5-impor…\" to button \"Drag and drop your CSV file here Select…\" in \"Invite users\"",
+        "target": {
+          "role": "button",
+          "name": "Drag and drop your CSV file here Select a CSV file",
+          "within": "Invite users"
+        },
+        "paths": [
+          "{{param:/file}}"
+        ]
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Upload\" in \"Invite users\"",
+        "target": {
+          "role": "button",
+          "name": "Upload",
+          "testId": "import-next",
+          "within": "Invite users"
+        }
+      },
+      {
+        "name": "check",
+        "summary": "check checkbox \"Allow users outside the allowed domains…\" in \"Invite users\"",
+        "target": {
+          "role": "checkbox",
+          "name": "Allow users outside the allowed domains Leave this off to skip any address that isn't on an allowed domain. Turn it on to add them too — the override is recorded in the audit log.",
+          "within": "Invite users"
+        },
+        "checked": true
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Finish\" in \"Invite users\"",
+        "target": {
+          "role": "button",
+          "name": "Finish",
+          "testId": "import-finish",
+          "within": "Invite users"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/import.e2e.ts::IAM%20CSV%20import::one%20file::the%20import%20reports%20how%20many%20rows%20were%20invited%2C%20updated%20and%20not%20imported",
+      "targetId": "web",
+      "instructionDigest": "e30b7137391a0ff7e5bd32b0b02697310ca186d8899a6619585cfc8277082e70",
+      "paramsDigest": "7fc03ef0d9769802ec13fb0b6c74d75d8dda68d4546b6cfa3b2ce19c96413992",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-sonnet-5-5"
+    },
+    "summary": "Uploaded the CSV via Invite users > Import users, kept the automatic mapping (first_name, last_name, email), checked \"Allow users outside the allowed domains\", and clicked Finish once. The drawer closed and a toast said \"Import of iam-e2e-mwt3j1quw5-import.csv started — the results appear under Inv…",
+    "startPath": "/motadata/users",
+    "endPath": "/motadata/users",
+    "endAnchors": [
+      {
+        "role": "button",
+        "name": "Dismiss",
+        "testId": "toast-close"
+      },
+      {
+        "role": "button",
+        "name": "Pending invites 24 awaiting acceptance"
+      },
+      {
+        "testId": "user-name-311"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "role": "button",
+        "name": "Pending invites 23 awaiting acceptance"
+      },
+      {
+        "testId": "user-name-271"
+      }
+    ],
+    "endWaitMs": 15629,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "28aead529c0388db258d9613832efec5058e393b427c4c6ef8b5b79a72c87938"
+    }
+  }
+}

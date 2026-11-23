@@ -1,0 +1,135 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-23T10:00:59.731Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "type",
+        "summary": "type \"vismay.chovatiya+invite-test@motadata.c…\" into textbox \"Search users\"",
+        "target": {
+          "role": "textbox",
+          "name": "Search users",
+          "testId": "strip-search",
+          "placeholder": "Search"
+        },
+        "value": "vismay.chovatiya+invite-test@motadata.com"
+      },
+      {
+        "name": "tap",
+        "summary": "tap node \"raj samani\" (2 of 2)",
+        "target": {
+          "name": "raj samani",
+          "position": {
+            "index": 1,
+            "of": 2
+          }
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap tab \"Access profiles\" in \"User management\"",
+        "target": {
+          "role": "tab",
+          "name": "Access profiles",
+          "testId": "tab-access",
+          "within": "User management"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/access-profiles.e2e.ts::IAM%20access%20profiles::a%20team%E2%80%99s%20profile%20shows%20read-only%20on%20a%20member%E2%80%99s%20profile",
+      "targetId": "web",
+      "instructionDigest": "8e694ffaea0752dc3144d7a7e300a1b18fa58a2c7c5f08ef3aeaef4e6801f801",
+      "paramsDigest": "eb2e686f23eff66b11f297e16ff3559204337b387a5a68745955f8a84bd08781",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-sonnet-5-5"
+    },
+    "summary": "Searched users for the email, opened \"raj samani\" drawer, went to Access profiles tab. It shows \"Assigned via team\" with iam-e2e-mwt3hnne2m-team through qa-pw-team, Permanent, Active.",
+    "startPath": "/motadata/users",
+    "endPath": "/motadata/users",
+    "endAnchors": [
+      {
+        "text": "User management"
+      },
+      {
+        "role": "image",
+        "name": "raj samani",
+        "text": "R",
+        "testId": "avatar"
+      },
+      {
+        "text": "raj samani",
+        "testId": "user-name"
+      },
+      {
+        "text": "vismay.chovatiya+invite-test@motadata.com"
+      },
+      {
+        "role": "button",
+        "name": "Edit",
+        "testId": "user-edit"
+      },
+      {
+        "role": "button",
+        "name": "More actions",
+        "testId": "row-actions-trigger"
+      },
+      {
+        "text": "Phone number"
+      },
+      {
+        "text": "-",
+        "testId": "about-phone"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "MSP Wide View"
+      },
+      {
+        "name": "anything@vpjygxzu.mailosaur.net"
+      },
+      {
+        "role": "button",
+        "name": "Back to workspace"
+      },
+      {
+        "text": "Settings"
+      },
+      {
+        "role": "button",
+        "name": "Search"
+      },
+      {
+        "role": "textbox",
+        "name": "Search settings",
+        "placeholder": "Search settings"
+      },
+      {
+        "text": "⌘K"
+      },
+      {
+        "text": "People & Access"
+      }
+    ],
+    "endWaitMs": 14138,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "28aead529c0388db258d9613832efec5058e393b427c4c6ef8b5b79a72c87938"
+    }
+  }
+}

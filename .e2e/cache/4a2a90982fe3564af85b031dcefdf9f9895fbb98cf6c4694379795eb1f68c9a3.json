@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-23T09:59:48.733Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Row actions\" in \"E2E disabled-sessions-mwt3azhzin\"",
+        "target": {
+          "role": "button",
+          "name": "Row actions",
+          "testId": "row-actions-trigger",
+          "within": "E2E disabled-sessions-mwt3azhzin"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap menuitem \"Disable user\"",
+        "target": {
+          "role": "menuitem",
+          "name": "Disable user",
+          "testId": "row-actions-menu-disable"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Disable\" in \"Disable E2E disabled-sessions-mwt3azhzin\"",
+        "target": {
+          "role": "button",
+          "name": "Disable",
+          "testId": "confirm-submit",
+          "within": "Disable E2E disabled-sessions-mwt3azhzin"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/users-lifecycle.e2e.ts::IAM%20person%20lifecycle::a%20disabled%20person%20keeps%20no%20session",
+      "targetId": "web",
+      "instructionDigest": "0abed5c598739f9588485748b815a570310d5acab9d82e682ce675ce5db4e37c",
+      "paramsDigest": "7112884177195e13665e56a453d5aafb0c1d41d6a459e1ee7fc4f9b315716f3b",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-sonnet-5-5"
+    },
+    "summary": "Disabled the user from Row actions > Disable user and confirmed. The toast \"E2E disabled-sessions-mwt3azhzin disabled\" appeared, the row status changed to Inactive, and the Active users KPI dropped from 108 to 107.",
+    "startPath": "/motadata/users",
+    "endPath": "/motadata/users",
+    "endAnchors": [
+      {
+        "text": "74% of total"
+      },
+      {
+        "text": "Inactive",
+        "testId": "badge-label"
+      },
+      {
+        "role": "button",
+        "name": "Dismiss",
+        "testId": "toast-close"
+      },
+      {
+        "role": "cell",
+        "name": "Inactive"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "75% of total"
+      },
+      {
+        "text": "Active",
+        "testId": "badge-label"
+      },
+      {
+        "role": "cell",
+        "name": "Active"
+      }
+    ],
+    "endWaitMs": 13747,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "28aead529c0388db258d9613832efec5058e393b427c4c6ef8b5b79a72c87938"
+    }
+  }
+}

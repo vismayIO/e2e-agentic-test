@@ -1,0 +1,138 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-23T09:58:26.909Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Invite users\"",
+        "target": {
+          "role": "button",
+          "name": "Invite users",
+          "testId": "invite-users"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Import users Upload a file to add many …\" in \"Invite users\"",
+        "target": {
+          "role": "button",
+          "name": "Import users Upload a file to add many people at once.",
+          "testId": "invite-method-csv",
+          "within": "Invite users"
+        }
+      },
+      {
+        "name": "upload",
+        "summary": "upload \"tmp/iam-import/iam-e2e-mwt3eo7hbe-colum…\" to button \"Drag and drop your CSV file here Select…\" in \"Invite users\"",
+        "target": {
+          "role": "button",
+          "name": "Drag and drop your CSV file here Select a CSV file",
+          "within": "Invite users"
+        },
+        "paths": [
+          "{{param:/file}}"
+        ]
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Upload\" in \"Invite users\"",
+        "target": {
+          "role": "button",
+          "name": "Upload",
+          "testId": "import-next",
+          "within": "Invite users"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/import.e2e.ts::IAM%20CSV%20import::the%20MSP%20import%20maps%20an%20access%20profile%20column%2C%20not%20a%20role%20column",
+      "targetId": "web",
+      "instructionDigest": "683454142e39efb26b886b8820739a378c31ed68522e76237d97a203a7bebd0c",
+      "paramsDigest": "7fc03ef0d9769802ec13fb0b6c74d75d8dda68d4546b6cfa3b2ce19c96413992",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-sonnet-5-5"
+    },
+    "summary": "Uploaded the CSV through Invite users > Import users and reached the \"Map fields\" step. The mapping rows are First name, Last name, Email address, Access profile, Department, Site, Phone number, Job Title, user Testing field and VIP. There is an \"Access profile\" row (default \"Don't import\") and no …",
+    "startPath": "/motadata/users",
+    "endPath": "/motadata/users",
+    "endAnchors": [
+      {
+        "role": "button",
+        "name": "Back to invite options",
+        "testId": "drawer-back"
+      },
+      {
+        "role": "listitem",
+        "name": "Invite users"
+      },
+      {
+        "text": "Import users"
+      },
+      {
+        "text": "Upload CSV"
+      },
+      {
+        "text": "Map fields"
+      },
+      {
+        "text": "Match the columns in the Motadata user table to the columns in your CSV. Required fields are marked with an asterisk (*)."
+      },
+      {
+        "text": "Motadata user table columns"
+      },
+      {
+        "text": "CSV columns header"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "MSP Wide View"
+      },
+      {
+        "name": "anything@vpjygxzu.mailosaur.net"
+      },
+      {
+        "role": "button",
+        "name": "Back to workspace"
+      },
+      {
+        "text": "Settings"
+      },
+      {
+        "role": "button",
+        "name": "Search"
+      },
+      {
+        "role": "textbox",
+        "name": "Search settings",
+        "placeholder": "Search settings"
+      },
+      {
+        "text": "⌘K"
+      },
+      {
+        "text": "People & Access"
+      }
+    ],
+    "endWaitMs": 14448,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "28aead529c0388db258d9613832efec5058e393b427c4c6ef8b5b79a72c87938"
+    }
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-23T09:59:05.072Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Done\" in \"Credential created\"",
+        "target": {
+          "role": "button",
+          "name": "Done",
+          "testId": "confirm-submit",
+          "within": "Credential created"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap node \"{{param:/key}}\"",
+        "target": {
+          "text": "{{param:/key}}"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Actions for iam-e2e-mwt3eon6yi-no-readb…\" in \"{{param:/key}}\"",
+        "target": {
+          "role": "button",
+          "name": "Actions for {{param:/key}}",
+          "testId": "row-actions-trigger",
+          "within": "{{param:/key}}"
+        }
+      },
+      {
+        "name": "pressKey",
+        "summary": "press \"Escape\" on the focused field",
+        "key": "Escape"
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/service-accounts.e2e.ts::IAM%20service%20accounts::credentials::the%20secret%20cannot%20be%20read%20back%20after%20leaving%20the%20result%20page",
+      "targetId": "web",
+      "instructionDigest": "6cd083aed33d8acdf928a7d4629bd521fffcaa2571ff7d64fedf882222f84cf9",
+      "paramsDigest": "8c5297d752f4d111e89a90edc4ed770dac73ed632df811ec29e304600baee0e5",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-sonnet-5-5"
+    },
+    "summary": "After clicking Done, the drawer for service account 302 showed the credential \"iam-e2e-mwt3eon6yi-no-readback-key\" (API key, Active). Tapping the row opened nothing. Its Actions menu offered only \"Disable credential\" and \"Revoke credential\". No control showed the secret again, and the secret text n…",
+    "startPath": "/motadata/service-accounts/302",
+    "endPath": "/motadata/service-accounts/302",
+    "endAnchors": [
+      {
+        "text": "Service accounts"
+      },
+      {
+        "text": "Vendor"
+      },
+      {
+        "role": "button",
+        "name": "Edit",
+        "testId": "edit-sa"
+      },
+      {
+        "role": "button",
+        "name": "More actions",
+        "testId": "row-actions-trigger"
+      },
+      {
+        "text": "Organization access",
+        "testId": "sa-reach-label"
+      },
+      {
+        "text": "motadata"
+      },
+      {
+        "text": "Credentials"
+      },
+      {
+        "name": "1 credential",
+        "text": "1",
+        "testId": "sa-credential-count"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "role": "button",
+        "name": "Dismiss",
+        "testId": "toast-close"
+      },
+      {
+        "role": "heading",
+        "name": "Credential created"
+      },
+      {
+        "text": "Copy this secret now — it is shown once and cannot be retrieved again."
+      },
+      {
+        "role": "button",
+        "name": "Copy secret",
+        "testId": "copy-secret"
+      },
+      {
+        "role": "button",
+        "name": "Done",
+        "testId": "confirm-submit"
+      },
+      {
+        "role": "dialog",
+        "name": "Credential created",
+        "testId": "credential-secret"
+      }
+    ],
+    "endWaitMs": 12535,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "86bd0cf869585b58996e49caf28fd190dd6d0bfa4233728ec5b0803e622dd86b"
+    }
+  }
+}

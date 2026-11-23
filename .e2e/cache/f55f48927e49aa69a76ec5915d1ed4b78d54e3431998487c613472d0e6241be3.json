@@ -1,0 +1,109 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-23T09:59:08.230Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"My sessions\"",
+        "target": {
+          "role": "button",
+          "name": "My sessions"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/sessions.e2e.ts::IAM%20sessions::my%20sessions%20lists%20the%20current%20session",
+      "targetId": "web",
+      "instructionDigest": "b48a723cfda47dc47a2fbfedb3bb8e3e1dbfc3458e4db10b49054eb0502db409",
+      "paramsDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-sonnet-5-5"
+    },
+    "summary": "Opened My sessions from the left nav. The page is at /motadata/account/sessions. After loading, the list shows one session, \"Desktop · Chrome 159\", marked \"Current\" and \"Active now\".",
+    "startPath": "/motadata/users",
+    "endPath": "/motadata/account/sessions",
+    "endAnchors": [
+      {
+        "role": "heading",
+        "name": "My sessions"
+      },
+      {
+        "text": "Every device you are signed in on. Revoke one you do not recognise, or end them all."
+      },
+      {
+        "role": "heading",
+        "name": "Active sessions"
+      },
+      {
+        "role": "button",
+        "name": "Terminate all sessions",
+        "testId": "terminate-all"
+      },
+      {
+        "text": "Desktop · Chrome 159"
+      },
+      {
+        "text": "Location not reported"
+      },
+      {
+        "text": "Active now",
+        "testId": "session-seen"
+      },
+      {
+        "text": "Current",
+        "testId": "badge-label"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "role": "heading",
+        "name": "Users"
+      },
+      {
+        "text": "Everyone who can sign in across this tenant: members and pending invitations."
+      },
+      {
+        "role": "button",
+        "name": "Invitations & imports",
+        "testId": "invitations-imports"
+      },
+      {
+        "role": "button",
+        "name": "Invite users",
+        "testId": "invite-users"
+      },
+      {
+        "text": "Total users"
+      },
+      {
+        "text": "across all organizations"
+      },
+      {
+        "text": "Active users"
+      },
+      {
+        "text": "75% of total"
+      }
+    ],
+    "endWaitMs": 13447,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "d1f48978684b3ea609e96055b27a8375e83021c129c74a5ad341e623a4496c8c"
+    }
+  }
+}

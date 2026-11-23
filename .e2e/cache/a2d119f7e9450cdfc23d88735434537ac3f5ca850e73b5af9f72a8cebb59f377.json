@@ -1,0 +1,129 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-23T09:59:02.561Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Create role\"",
+        "target": {
+          "role": "button",
+          "name": "Create role",
+          "testId": "create-role"
+        }
+      },
+      {
+        "name": "type",
+        "summary": "type \"{{param:/name}}\" into textbox \"Role namerequired\"",
+        "target": {
+          "role": "textbox",
+          "name": "Role namerequired",
+          "testId": "builder-name",
+          "placeholder": "Enter role name"
+        },
+        "value": "{{param:/name}}"
+      },
+      {
+        "name": "type",
+        "summary": "type \"Edits tickets owned by the person’s tea…\" into textbox \"Description\"",
+        "target": {
+          "role": "textbox",
+          "name": "Description",
+          "testId": "builder-description",
+          "placeholder": "Add a description about this role"
+        },
+        "value": "Edits tickets owned by the person’s teams"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Next\"",
+        "target": {
+          "role": "button",
+          "name": "Next",
+          "testId": "builder-next"
+        }
+      },
+      {
+        "name": "check",
+        "summary": "check checkbox \"Read Role\" in \"Role\"",
+        "target": {
+          "role": "checkbox",
+          "name": "Read Role",
+          "within": "Role"
+        },
+        "checked": true
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Save role\"",
+        "target": {
+          "role": "button",
+          "name": "Save role",
+          "testId": "builder-save"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/roles.e2e.ts::IAM%20roles::a%20new%20custom%20role%20is%20listed%20as%20Custom",
+      "targetId": "web",
+      "instructionDigest": "f2ce160a59b3c49acad3005e3010cea241fcffc24becd83284226bebef45809b",
+      "paramsDigest": "be0e2afdea225a28593f3bd5553d47a5e938eb1a40ed1341e1899638b050a85b",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-sonnet-5-5"
+    },
+    "summary": "I created the role \"iam-e2e-mwt3fdjbmz-release-engineer\" with the description \"Edits tickets owned by the person’s teams\". On the permissions step I ticked only \"Read Role\" and saved. A toast said the role was saved. The roles list now shows it with type \"Custom\" and \"1 permission\". The custom coun…",
+    "startPath": "/motadata/roles",
+    "endPath": "/motadata/roles",
+    "endAnchors": [
+      {
+        "text": "10 built-in · 2 custom"
+      },
+      {
+        "text": "83% in use"
+      },
+      {
+        "text": "Edits tickets owned by the person’s teams"
+      },
+      {
+        "text": "1 permission",
+        "testId": "permission-count"
+      },
+      {
+        "role": "button",
+        "name": "Dismiss",
+        "testId": "toast-close"
+      },
+      {
+        "role": "cell",
+        "name": "1 permission"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "10 built-in · 1 custom"
+      },
+      {
+        "text": "91% in use"
+      }
+    ],
+    "endWaitMs": 14791,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "06565ee2a68d877a2f2ee2ed57c8f4a0ec200df34817456095dc18f6ec064e23"
+    }
+  }
+}

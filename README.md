@@ -19,8 +19,13 @@ tests/
   auth.setup.e2e.ts      QA user login → session "qa" (credentials set hon tab)
   smoke.e2e.ts           generic checks, kisi bhi app pe chalte hain
   flows/                 ← apne critical flows yahan (example template hai)
+  app/                   Motadata console ka shared hissa — har module isi pe
+  <module>/              ek module ke tests (abhi: iam/) — neeche "Modules"
+docs/<module>/           us module ka acceptance brief
 scripts/nightly.ts       orchestrator: run → explore → report → notify
-lib/                     report parsing, HTML, Slack/Teams
+scripts/cost-report.ts   last run ka model kharcha + replay cache
+scripts/verify-coverage.ts  brief ka har ID: test hai ya wajah
+lib/                     report parsing, HTML, Slack/Teams, Mailosaur, CSV, pricing
 .github/workflows/nightly.yml   GitHub Actions schedule
 azure-pipelines.yml             Azure DevOps schedule
 ```
@@ -67,15 +72,55 @@ test('user can add to cart', { tags: ['critical'] }, async ({ app, agent, screen
 - Login chahiye to `describe('...', { session: 'qa' }, ...)`.
 - Locally pass hua `agent.act` step `.e2e/cache/` me record hota hai. **Is folder ko commit karo** — CI me woh bina model call ke replay hota hai (tez + sasta). App badal gaya aur replay fit nahi hua to agent khud sambhal leta hai.
 
-## IAM suite (`tests/iam/`)
+## Modules (`tests/<module>/`)
 
-IAM Business Acceptance Brief (`test_case.md`) ke tests, IAM console (next-gen-ui) pe. Har test ke tags me brief ke IDs hain (`--tag BEH-IAM-13`), priority (`P0/P1/P2`) bhi.
+Console ke har module (IAM, aage aur) ka ek folder. Jo sab modules me same hai woh `tests/app/` me ek baar:
 
-- `.env` me `APP_URL`, `IAM_ADMIN_EMAIL` (Mailosaur address), `MAILOSAUR_API_KEY`, `MAILOSAUR_SERVER_ID` chahiye — na ho to IAM suite skip hota hai.
-- Sign-in ek baar per run (`tests/iam/auth.setup.e2e.ts`): test email daal ke code mangwata hai, Mailosaur inbox se naya OTP padh ke type karta hai (`lib/mailosaur.ts`) — koi manual step nahi. Baaki saare tests wahi session reuse karte hain.
-- App login sessionStorage me rakhta hai, jo e2e `session.save` nahi rakhta — setup use localStorage me copy karke save karta hai, har test page load se pehle wapas daalta hai.
-- Tenant perspective se: MSP Console = Northbridge (CFG-IAM-C), Direct customer = Lighthouse (CFG-IAM-A/B), Client Operator = Acme Healthcare (CFG-IAM-E).
-- Tag `bug`: brief ka expected behaviour jo app abhi nahi karta — jaan-boojh ke fail. Inke bina chalana: `--exclude-tag bug`.
+| `tests/app/` | Kya |
+|---|---|
+| `auth.ts` | Admin login: email code Mailosaur se (`lib/mailosaur.ts`), saved login `.auth/admin.json` — har account ka OTP ek hi baar, modules kitne bhi hon. App ka sessionStorage login session me rakhna. |
+| `ui.ts` | UI kit: `openPage`, `toast`, `Dialog`, row "⋯" menu, `ListPage` (search + rows), date picker. Locators app ke test ids se. |
+| `data.ts` | `freshNames(prefix)`: har attempt ke naye naam/Mailosaur addresses (retry purane data se nahi takrata). |
+| `cleanup.ts` | `sweep()`: module ke prefix wala purana data ek-ek karke hatao. |
+
+Ek module folder ka shape (IAM jaisa):
+
+```
+tests/<module>/
+  <module>.ts            module constants: session naam, data prefix, agent context
+  <module>.setup.e2e.ts  adminSignIn → apna purana data sweep → apna test data → session.save
+  pages/                 har screen ka page object (tests/app/ui.ts pe)
+  fixtures.ts            test.extend: page objects fixtures ke roop me
+  coverage.ts            brief ke jo IDs automate nahi ho sakte, wajah ke saath
+  *.e2e.ts               tests: tags me brief IDs + P0/P1/P2
+docs/<module>/acceptance-brief.md
+```
+
+**Naya module:** upar ka shape banao — apna prefix (`<module>-e2e`), apna session naam, aur setup me sirf apna data (pehle `sweep` se apna purana data, phir naya). Login, UI kit, naming, cleanup dobara mat likho; kisi doosre module ka page chahiye to wahi import karo (`tests/iam/pages/users.ts`). Phir `npm run coverage -- <module>`.
+
+**Likhne ke niyam (har module):**
+- **Agent-driven, do taraf se jaancha hua:** har test me jo kaam jaancha ja raha hai (*When*) woh agent karta hai — admin ki zubaan me ek chhota goal (`agent.act`, kahan rukna hai woh bhi likha). Nateeja (*Then*) do baar: `agent.assert` brief ki har baat naam se jaanchta hai, aur code (`expect` + page object locators) screen ki asli state pakki karta hai. Dono pass hon tabhi test pass — agent ki galat "ho gaya" baat code pakad leta hai, aur jo wording code nahi samajhta use agent.
+- **Exact code sirf wahan jahan test ka sawaal nahi:** precondition (*Given* — jaise ek bana hua profile, jiska fail hona test ka nateeja na bigaade), setup / cleanup, aur asli logon pe khatarnaak kaam (Tenant Owner). Har agent call ki chhat `e2e.config.ts` me (`maxSteps` 25, `maxModelCalls` 25); goal us chhat me poora na ho to use todo.
+- Pehla run zyada model calls leta hai; uske baad goals replay cache (`.e2e/cache/`) se bina model ke chalte hain, jab tak screen na badle (`npm run cost` dikhata hai kitne replay hue).
+- Data sirf apne prefix se, naam `freshNames` se (test file ke module scope me). Destructive kaam sirf apne banaye data pe.
+- Tag `bug` = brief ka behaviour jo app abhi nahi karta (jaan-boojh ke fail, comment me tareekh + kya dikha).
+- Jo test kisi fixed (setup ke) user ka state ek taraf badle — disable, delete, sessions khatam — use `retries: 0` (serial group pe bhi): retry ko badla hua user milta aur uska error asli wajah chhupa deta. Apne naye data wale tests retry kar sakte hain (`freshNames` har attempt naye naam deta hai).
+
+```sh
+npx e2e run tests/iam                             # ek module
+npx e2e run tests/iam --exclude-tag bug           # sirf jo pass hona chahiye
+npx e2e run tests/iam --last-failed --headed      # fail hue dobara, browser dikhta hua
+npm run coverage -- iam                           # brief coverage
+npm run cost                                      # last run ka model kharcha + replay cache
+```
+
+**Chahiye** (`.env`): `APP_URL`, `APP_ADMIN_EMAIL` (Mailosaur address), `MAILOSAUR_API_KEY`, `MAILOSAUR_SERVER_ID`; optional `APP_ADMIN_NAME` (default "Test User"). Na ho to signed-in suites skip.
+
+### IAM (`tests/iam/`)
+
+Brief `docs/iam/acceptance-brief.md`. Setup pehle pichhle runs ka `iam-e2e-` data hatata hai (service accounts → access profiles → roles → users; kuch na hate to setup fail hota hai), phir 8 disposable users ka pool banata hai (ek invite, har ek ka pehla sign-in OTP se) taaki disable/delete/sessions asli logon ko na chhuein, aur apna ek access profile do pool users ko deta hai (service-account owner picker sirf direct access profile wale members dikhata hai). Tests ke holders aur owners sirf pool users hain. Optional env: `IAM_TENANT_OWNER_EMAIL`, `IAM_ATTRIBUTES_ENABLED=1`, `IAM_TEAM` + `IAM_TEAM_MEMBER_EMAIL` (team → member wala test).
+
+**Cost:** `scripts/cost-report.ts` `.e2e/report.json` se har agent step ke tokens, cache (replay) aur USD (list prices `lib/pricing.ts`, tareekh ke saath). Naya model use karo to pehle `lib/pricing.ts` me uska rate.
 
 ## Explore goals
 

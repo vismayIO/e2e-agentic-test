@@ -1,0 +1,133 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-23T09:59:23.720Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Add credential\" in \"Credentials\"",
+        "target": {
+          "role": "button",
+          "name": "Add credential",
+          "testId": "add-credential",
+          "within": "Credentials"
+        }
+      },
+      {
+        "name": "type",
+        "summary": "type \"{{param:/key}}\" into textbox \"Credential namerequired\" in \"Service accounts\"",
+        "target": {
+          "role": "textbox",
+          "name": "Credential namerequired",
+          "testId": "cred-name-input",
+          "placeholder": "e.g. CI Pipeline Key, Grafana OAuth Client",
+          "within": "Service accounts"
+        },
+        "value": "{{param:/key}}"
+      },
+      {
+        "name": "tap",
+        "summary": "tap radio \"API key\" in \"Service accounts\"",
+        "target": {
+          "role": "radio",
+          "name": "API key",
+          "testId": "cred-method-static_api_key",
+          "within": "Service accounts"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/service-accounts.e2e.ts::IAM%20service%20accounts::credentials::a%20new%20API%20key%20always%20expires%20within%20365%20days",
+      "targetId": "web",
+      "instructionDigest": "3d5dcc44ea91a20b135a180b2cb469aae0686564d0ce705d05150517f800201b",
+      "paramsDigest": "8c5297d752f4d111e89a90edc4ed770dac73ed632df811ec29e304600baee0e5",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-sonnet-5-5"
+    },
+    "summary": "In the Add credential drawer I entered the name \"iam-e2e-mwt3eon6yi-max-365-key\" and selected the API key method, which is now checked. I did not press Generate. The expiry note did not change after the switch and still reads \"The credential expires 90 days after it is generated.\" (inferred from th…",
+    "startPath": "/motadata/service-accounts/305",
+    "endPath": "/motadata/service-accounts/305",
+    "endAnchors": [
+      {
+        "role": "button",
+        "name": "Back to the credentials",
+        "testId": "drawer-back"
+      },
+      {
+        "role": "listitem",
+        "name": "Service accounts"
+      },
+      {
+        "text": "Add credential"
+      },
+      {
+        "text": "Choose an authentication type to enable secure access between this account and external systems like Jira or your reporting tools."
+      },
+      {
+        "name": "required",
+        "text": "*"
+      },
+      {
+        "text": "Give this a name that describes its purpose or the system using it."
+      },
+      {
+        "text": "Recommended"
+      },
+      {
+        "text": "A client ID + secret for apps using the OAuth 2.0 protocol. Recommended for production integrations."
+      }
+    ],
+    "goneAnchors": [
+      {
+        "role": "button",
+        "name": "Dismiss",
+        "testId": "toast-close"
+      },
+      {
+        "text": "Service accounts"
+      },
+      {
+        "text": "Vendor"
+      },
+      {
+        "role": "button",
+        "name": "Edit",
+        "testId": "edit-sa"
+      },
+      {
+        "role": "button",
+        "name": "More actions",
+        "testId": "row-actions-trigger"
+      },
+      {
+        "text": "Organization access",
+        "testId": "sa-reach-label"
+      },
+      {
+        "text": "motadata"
+      },
+      {
+        "text": "Credentials"
+      }
+    ],
+    "endWaitMs": 12631,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "86bd0cf869585b58996e49caf28fd190dd6d0bfa4233728ec5b0803e622dd86b"
+    }
+  }
+}

@@ -1,0 +1,241 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-23T09:59:28.516Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Create access profile\"",
+        "target": {
+          "role": "button",
+          "name": "Create access profile",
+          "testId": "create-profile"
+        }
+      },
+      {
+        "name": "type",
+        "summary": "type \"{{param:/name}}\" into textbox \"Access profile namerequired\" in \"Create access profile\"",
+        "target": {
+          "role": "textbox",
+          "name": "Access profile namerequired",
+          "testId": "profile-name",
+          "placeholder": "Enter a name",
+          "within": "Create access profile"
+        },
+        "value": "{{param:/name}}"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"You can select more than one…\" in \"Create access profile\"",
+        "target": {
+          "role": "button",
+          "name": "You can select more than one…",
+          "testId": "profile-roles-trigger",
+          "within": "Create access profile"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Approver\" in \"Account Manager\"",
+        "target": {
+          "role": "button",
+          "name": "Approver",
+          "testId": "profile-roles-popover-option-9",
+          "within": "Account Manager"
+        }
+      },
+      {
+        "name": "pressKey",
+        "summary": "press \"Escape\" on the focused field",
+        "key": "Escape"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Select organizations\" in \"Create access profile\"",
+        "target": {
+          "role": "button",
+          "name": "Select organizations",
+          "testId": "profile-orgs-trigger",
+          "within": "Create access profile"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"MSP owner organization\"",
+        "target": {
+          "role": "button",
+          "name": "MSP owner organization",
+          "testId": "profile-orgs-popover-option-01M6G6MKJA7A7PYD7FWDA81WXR"
+        }
+      },
+      {
+        "name": "pressKey",
+        "summary": "press \"Escape\" on the focused field",
+        "key": "Escape"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Create access profile\"",
+        "target": {
+          "role": "button",
+          "name": "Create access profile",
+          "testId": "profile-submit"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap tab \"People\" in \"Access profiles\"",
+        "target": {
+          "role": "tab",
+          "name": "People",
+          "testId": "tab-people",
+          "within": "Access profiles"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Add people\" in \"People\"",
+        "target": {
+          "role": "button",
+          "name": "Add people",
+          "testId": "add-people",
+          "within": "People"
+        }
+      },
+      {
+        "name": "type",
+        "summary": "type \"iam-e2e-mwt3azhzin-shared@vpjygxzu.mail…\" into searchbox \"Search people\" in \"Access profiles\"",
+        "target": {
+          "role": "searchbox",
+          "name": "Search people",
+          "testId": "holders-search",
+          "placeholder": "Search people",
+          "within": "Access profiles"
+        },
+        "value": "{{param:/email}}"
+      },
+      {
+        "name": "check",
+        "summary": "check checkbox \"E2E shared-mwt3azhzin\"",
+        "target": {
+          "role": "checkbox",
+          "name": "E2E shared-mwt3azhzin"
+        },
+        "checked": true
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Next\" in \"Access profiles\"",
+        "target": {
+          "role": "button",
+          "name": "Next",
+          "testId": "add-holders-next",
+          "within": "Access profiles"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Assign 1 person\" in \"Access profiles\"",
+        "target": {
+          "role": "button",
+          "name": "Assign 1 person",
+          "testId": "add-holders-submit",
+          "within": "Access profiles"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/access-profiles.e2e.ts::IAM%20access%20profiles::an%20admin%20gives%20a%20person%20a%20new%20profile",
+      "targetId": "web",
+      "instructionDigest": "367b78dcb4021d0738fcfd417b7e2469c7f7f7cdad99c8f90f7a96bd0b868d22",
+      "paramsDigest": "486a28a535a7e74ae86997b1576f1be45b278ba82d84bbf6039020470c79cecc",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-sonnet-5-5"
+    },
+    "summary": "Created access profile iam-e2e-mwt3eon0yv-journey (role Approver, organization motadata/MSP owner). Assigned it directly to iam-e2e-mwt3azhzin-shared@vpjygxzu.mailosaur.net with expiry off. Toast \"1 holder now has iam-e2e-mwt3eon0yv-journey\"; the People tab shows the person under \"Assigned directly…",
+    "startPath": "/motadata/access-profiles",
+    "endPath": "/motadata/access-profiles",
+    "endAnchors": [
+      {
+        "role": "button",
+        "name": "Dismiss",
+        "testId": "toast-close"
+      },
+      {
+        "text": "Person"
+      },
+      {
+        "text": "Created by Test User"
+      },
+      {
+        "role": "button",
+        "name": "Edit",
+        "testId": "edit-profile"
+      },
+      {
+        "role": "button",
+        "name": "Access profile actions",
+        "testId": "row-actions-trigger"
+      },
+      {
+        "text": "Details"
+      },
+      {
+        "text": "People"
+      },
+      {
+        "role": "heading",
+        "name": "People"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "MSP Wide View"
+      },
+      {
+        "name": "anything@vpjygxzu.mailosaur.net"
+      },
+      {
+        "role": "button",
+        "name": "Back to workspace"
+      },
+      {
+        "text": "Settings"
+      },
+      {
+        "role": "button",
+        "name": "Search"
+      },
+      {
+        "role": "textbox",
+        "name": "Search settings",
+        "placeholder": "Search settings"
+      },
+      {
+        "text": "⌘K"
+      },
+      {
+        "text": "People & Access"
+      }
+    ],
+    "endWaitMs": 13344,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "28aead529c0388db258d9613832efec5058e393b427c4c6ef8b5b79a72c87938"
+    }
+  }
+}

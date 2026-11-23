@@ -1,0 +1,122 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-23T09:58:33.214Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "type",
+        "summary": "type \"iam-e2e-mwt3eon6f1-nobody@vpjygxzu.mail…\" into textbox \"Work email\"",
+        "target": {
+          "role": "textbox",
+          "name": "Work email",
+          "placeholder": "you@company.com"
+        },
+        "value": "{{param:/email}}"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Email me a sign-in code\"",
+        "target": {
+          "role": "button",
+          "name": "Email me a sign-in code"
+        }
+      }
+    ],
+    "executor": {
+      "name": "e2e-default-agent",
+      "version": "2"
+    },
+    "recordedFor": {
+      "testId": "tests/iam/sign-in.e2e.ts::IAM%20sign-in::a%20known%20and%20an%20unknown%20email%20see%20the%20same%20code%20screen",
+      "targetId": "web",
+      "instructionDigest": "856ad7cde1d351f701bf12fca5931323d213b60c54181cd47fa68b7af77306db",
+      "paramsDigest": "7112884177195e13665e56a453d5aafb0c1d41d6a459e1ee7fc4f9b315716f3b",
+      "callIndex": 1,
+      "agent": "default"
+    },
+    "recordedBy": {
+      "provider": "anthropic.messages",
+      "model": "claude-sonnet-5-5"
+    },
+    "summary": "Requested a sign-in code for the unknown email iam-e2e-mwt3eon6f1-nobody@vpjygxzu.mailosaur.net. The app showed the same \"Check your email\" screen as for the known email, with six OTP boxes, a disabled \"Verify & sign in\" button, \"Use a different email\", \"Resend code\" and a \"Sign-in code sent\" toast…",
+    "startPath": "/login",
+    "endPath": "/login",
+    "endAnchors": [
+      {
+        "role": "heading",
+        "name": "Check your email"
+      },
+      {
+        "role": "textbox",
+        "name": "OTP digit 1 of 6",
+        "placeholder": "○"
+      },
+      {
+        "role": "textbox",
+        "name": "OTP digit 2 of 6",
+        "placeholder": "○"
+      },
+      {
+        "role": "textbox",
+        "name": "OTP digit 3 of 6",
+        "placeholder": "○"
+      },
+      {
+        "role": "textbox",
+        "name": "OTP digit 4 of 6",
+        "placeholder": "○"
+      },
+      {
+        "role": "textbox",
+        "name": "OTP digit 5 of 6",
+        "placeholder": "○"
+      },
+      {
+        "role": "textbox",
+        "name": "OTP digit 6 of 6",
+        "placeholder": "○"
+      },
+      {
+        "role": "button",
+        "name": "Verify & sign in"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "role": "heading",
+        "name": "Sign in"
+      },
+      {
+        "text": "Enter your work email and we’ll send you a sign-in code."
+      },
+      {
+        "role": "button",
+        "name": "Continue with Google SSO"
+      },
+      {
+        "text": "or"
+      },
+      {
+        "text": "Work email"
+      },
+      {
+        "role": "button",
+        "name": "Email me a sign-in code"
+      },
+      {
+        "testId": "sso-buttons"
+      }
+    ],
+    "endWaitMs": 14591,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "423e9d55eb0af0d4173501b6c6519340cd23b9c0fa99f9a6154d4cecd42737ca",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "0c287b27bef01900577e4b5483b50476610a6b327b9cdf316b079dd0bb472988",
+      "agentContextDigest": "28aead529c0388db258d9613832efec5058e393b427c4c6ef8b5b79a72c87938"
+    }
+  }
+}

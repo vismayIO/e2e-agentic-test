@@ -1,149 +1,160 @@
-import { describe, test } from '@e2e-dev/web';
-import { unique } from 'e2e';
-import { IAM_CONTEXT, IAM_SESSION, IAM_SKIP, RUN_ID, TENANT, openAs, type Fx } from './support.ts';
+import { expect, unique } from 'e2e';
+import { LOGIN_SKIP } from '../app/auth.ts';
+import { describe, test } from './fixtures.ts';
+import { SA_ROLE } from './pages/service-accounts.ts';
+import { IAM_CONTEXT, IAM_SESSION, iamNames, poolUser } from './iam.ts';
+
+const data = iamNames();
+/** Pool user jise setup ne access profile diya — owner picker sirf direct profile wale members dikhata hai. */
+const owner = () => poolUser('sa-owner').name;
 
 /**
- * Service accounts (MSP view, tenant "motadata"): credentials, owner, switch off/on, delete.
+ * Service accounts (MSP view, organization "motadata"): credentials, owner, switch off/on, delete.
  * Brief: SIT-IAM-09, SIT-IAM-16 · BEH-IAM-12, 14, 23
  *
- * Har test apna service account `iam-e2e-<run>-…` banata hai (role End User; admin-tier role pe extra confirm aata hai); bacha data agle
- * run ka setup saaf karta hai. Owner guard (BEH-IAM-14: owner disable nahi ho sakta) yahan nahi — uske liye ek
- * disposable active user chahiye jise disable kiya ja sake (phase 2).
+ * Precondition (account, pehle se bane credentials) page objects se; jaancha jaane wala kaam agent karta hai,
+ * aur nateeja agent.assert + code dono jaanchte hain. Har test apna account `iam-e2e-<id>-…` banata hai
+ * (role SA_ROLE, owner pool ka 'sa-owner'); agle run ka setup unhe hatata hai. Owner guard (owner disable nahi
+ * ho sakta) users-lifecycle.e2e.ts me hai. Generated secrets kabhi log ya assert message me nahi jaate.
  */
 const SA_CONTEXT = `${IAM_CONTEXT} A service account drawer lists its credentials; "Add credential" creates an OAuth client or an API key.`;
 
-describe('IAM service accounts', { skip: IAM_SKIP, session: IAM_SESSION, tags: ['iam', 'service-accounts'], agentContext: SA_CONTEXT }, () => {
-  const newAccount = (label: string) => {
-    const name = `iam-e2e-${RUN_ID}-${label}`;
-    return name;
-  };
-  type Agent = Fx['agent'];
-  const createAccount = async (agent: Agent, name: string) => {
-    await agent.act('create a service account named {name} with the role End User and the organization motadata, keeping the default owner', {
-      params: { name: unique(name) },
-    });
-    await agent.waitFor('{name} is listed in the service accounts list', { params: { name: unique(name) } });
-  };
-  /** API key banao aur us page pe ruko jahan generated key dikhti hai. */
-  const generateApiKey = (agent: Agent, key: string) =>
-    agent.act('open the service account, add an API key credential named {key}, generate it, and stay on the page that shows the generated key', {
-      params: { key: unique(key) },
-    });
-  /** API key banao, "copied" confirm karo, credentials list pe wapas. */
-  const addApiKey = async (agent: Agent, key: string) => {
-    await generateApiKey(agent, key);
-    await agent.act('confirm the key has been copied and return to the credentials');
-    await agent.waitFor('{key} is listed among the credentials', { params: { key: unique(key) } });
-  };
-
-
+describe('IAM service accounts', { skip: LOGIN_SKIP, session: IAM_SESSION, tags: ['iam', 'service-accounts'], agentContext: SA_CONTEXT }, () => {
   describe('credentials', { tags: ['BEH-IAM-23', 'P0'] }, () => {
-    test('a new API key’s secret is shown once with a warning to save it', { tags: ['SIT-IAM-09'] }, async ({ app, browser, screen, agent }) => {
-      const name = newAccount('secret-once');
-      await openAs({ app, browser, screen }, TENANT.msp, '/service-accounts');
-      await createAccount(agent, name);
+    test('a new API key’s secret is shown once with a warning to save it', { tags: ['SIT-IAM-09'] }, async ({ agent, serviceAccounts }) => {
+      const name = data.name('secret-once');
+      await serviceAccounts.open();
+      await serviceAccounts.create(name, { owner: owner() });
+      const drawer = await serviceAccounts.openAccount(name);
 
-      await generateApiKey(agent, `${name}-key`);
+      await agent.act('add an API key credential named {key} to this service account, generate it, and stop on the result that shows the key', { params: { key: unique(`${name}-key`) } });
 
-      await agent.assert('the generated API key is shown with a warning to save it now because it cannot be seen again');
+      await agent.assert('the generated API key is shown once, with a warning to copy it now because it cannot be retrieved again, and a way to copy it');
+      await expect(drawer.secret).toContainText('Copy this secret now — it is shown once and cannot be retrieved again.');
+      await expect(drawer.secret.getByTestId('secret-value')).toHaveText(/^mda1\.sk\.\S+$/);
     });
 
-    test('the secret cannot be read back after leaving the result page', { tags: ['SIT-IAM-09'] }, async ({ app, browser, screen, agent }) => {
-      const name = newAccount('no-readback');
-      await openAs({ app, browser, screen }, TENANT.msp, '/service-accounts');
-      await createAccount(agent, name);
-      await generateApiKey(agent, `${name}-key`);
-      await agent.waitFor('the generated API key is shown with a warning to save it');
+    test('the secret cannot be read back after leaving the result page', { tags: ['SIT-IAM-09'] }, async ({ agent, screen, serviceAccounts }) => {
+      const name = data.name('no-readback');
+      const key = `${name}-key`;
+      await serviceAccounts.open();
+      await serviceAccounts.create(name, { owner: owner() });
+      const drawer = await serviceAccounts.openAccount(name);
+      await drawer.generate(key);
+      const secret = (await drawer.secret.getByTestId('secret-value').textContent())?.trim() ?? '';
+      expect(secret.length).toBeGreaterThan(16);
 
-      await agent.act('confirm the key has been copied and return to the credentials');
+      await agent.act('close the generated key result with Done, then open the credential {key} in the list and look for a way to see its secret again; do not change anything', { params: { key: unique(key) } });
 
-      await agent.assert('{key} is listed as Active with an expiry, and no API key or secret value is visible anywhere on the screen', {
-        params: { key: unique(`${name}-key`) },
-      });
+      await agent.assert('{key} is listed as Active with an expiry, and nowhere on the screen is its secret value shown or offered to be shown again', { params: { key: unique(key) } });
+      await expect(drawer.credential(key).getByTestId('credential-status')).toHaveText('Active');
+      await expect(screen.getByTestId('secret-value')).toHaveCount(0);
+      expect(await screen.getByText(secret, { exact: false }).count(), 'the secret must not be on screen any more').toBe(0);
     });
 
     // Deployed app: API key hamesha generate hone ke 90 din baad expire hoti hai (custom date nahi).
-    test('a new API key always expires within 365 days', async ({ app, browser, screen, agent }) => {
-      const name = newAccount('max-365');
-      await openAs({ app, browser, screen }, TENANT.msp, '/service-accounts');
-      await createAccount(agent, name);
+    test('a new API key always expires within 365 days', async ({ agent, screen, serviceAccounts }) => {
+      const name = data.name('max-365');
+      await serviceAccounts.open();
+      await serviceAccounts.create(name, { owner: owner() });
+      await serviceAccounts.openAccount(name);
 
-      await agent.act('open the service account, start adding a credential named {key} and choose the API key method', {
-        params: { key: unique(`${name}-key`) },
-      });
+      await agent.act('start adding a credential named {key}, choose the API key method, and stop before generating it', { params: { key: unique(`${name}-key`) } });
 
-      await agent.assert('the API key form says the key expires, and the expiry is at most 365 days (one year) after it is generated');
+      await agent.assert('the API key form says when the key expires, and that is at most one year (365 days) after it is generated; no expiry longer than that can be chosen');
+      const note = (await screen.getByTestId('cred-expiry-note').textContent()) ?? '';
+      const days = Number(note.match(/expires (\d+) days after/)?.[1]);
+      expect(days, `expiry note: "${note}"`).toBeGreaterThan(0);
+      expect(days).toBeLessThanOrEqual(365);
     });
 
-    test('a rotated key works beside the old one until the old one is disabled', { tags: ['SIT-IAM-09'] }, async ({ app, browser, screen, agent }) => {
-      const name = newAccount('rotate');
-      await openAs({ app, browser, screen }, TENANT.msp, '/service-accounts');
-      await createAccount(agent, name);
-      await addApiKey(agent, `${name}-old`);
-      await addApiKey(agent, `${name}-new`);
-      await agent.waitFor('both {old} and {new} are listed as Active', { params: { old: unique(`${name}-old`), new: unique(`${name}-new`) } });
+    test('a rotated key works beside the old one until the old one is disabled', { tags: ['SIT-IAM-09'] }, async ({ agent, serviceAccounts }) => {
+      const name = data.name('rotate');
+      const [oldKey, newKey] = [`${name}-old`, `${name}-new`];
+      await serviceAccounts.open();
+      await serviceAccounts.create(name, { owner: owner() });
+      const drawer = await serviceAccounts.openAccount(name);
+      await drawer.addApiKey(oldKey);
 
-      await agent.act('disable the credential {old}', { params: { old: unique(`${name}-old`) } });
-
-      await agent.assert('{old} is still listed but no longer active (shown as disabled or inactive), and {new} is still Active', {
-        params: { old: unique(`${name}-old`), new: unique(`${name}-new`) },
+      await agent.act('rotate the key: add a new API key credential named {new} and close its result with Done, then disable the credential {old}', {
+        params: { new: unique(newKey), old: unique(oldKey) },
       });
+
+      await agent.assert('{old} is still listed but disabled, and {new} is listed as Active', { params: { old: unique(oldKey), new: unique(newKey) } });
+      await expect(drawer.credential(oldKey).getByTestId('credential-status')).toHaveText('Disabled');
+      await expect(drawer.credential(newKey).getByTestId('credential-status')).toHaveText('Active');
     });
 
-    test('revoking a credential warns that it is final', async ({ app, browser, screen, agent }) => {
-      const name = newAccount('revoke');
-      await openAs({ app, browser, screen }, TENANT.msp, '/service-accounts');
-      await createAccount(agent, name);
-      await addApiKey(agent, `${name}-key`);
+    test('revoking a credential warns that it is final', async ({ agent, screen, serviceAccounts }) => {
+      const name = data.name('revoke');
+      const key = `${name}-key`;
+      await serviceAccounts.open();
+      await serviceAccounts.create(name, { owner: owner() });
+      const drawer = await serviceAccounts.openAccount(name);
+      await drawer.addApiKey(key);
 
-      await agent.act('choose "Revoke credential" for {key}', { params: { key: unique(`${name}-key`) } });
+      await agent.act('choose "Revoke credential" for {key} and stop at the confirmation; do not confirm it', { params: { key: unique(key) } });
 
-      await agent.assert('the confirmation says the credential stops working immediately and cannot be re-enabled');
+      const confirm = screen.getByTestId('revoke-credential');
+      await agent.assert('the confirmation says the credential stops working immediately, cannot be re-enabled, and suggests disabling plus issuing a new one to rotate without downtime');
+      await expect(confirm).toContainText('It stops working immediately and cannot be re-enabled');
+      await confirm.getByTestId('confirm-cancel').tap();
+      await expect(drawer.credential(key).getByTestId('credential-status')).toHaveText('Active');
     });
   });
 
   describe('owner and switch off/on', { tags: ['P1'] }, () => {
-    test('a service account always shows an accountable owner', { tags: ['BEH-IAM-14'] }, async ({ app, browser, screen, agent }) => {
-      const name = newAccount('owner');
-      await openAs({ app, browser, screen }, TENANT.msp, '/service-accounts');
+    test('a service account always shows an accountable owner', { tags: ['BEH-IAM-14'] }, async ({ agent, serviceAccounts }) => {
+      const name = data.name('owner');
+      await serviceAccounts.open();
 
-      await createAccount(agent, name);
+      await agent.act('create a service account named {name} with the role {role}, the organization motadata and {owner} as its owner', {
+        params: { name: unique(name), role: SA_ROLE, owner: unique(owner()) },
+      });
 
-      await agent.assert('the service accounts list shows a named owner for {name}', { params: { name: unique(name) } });
+      await serviceAccounts.open();
+      await serviceAccounts.search(name);
+      await agent.assert('the service accounts list shows {name} as Active, owned by {owner}', { params: { name: unique(name), owner: unique(owner()) } });
+      await expect(serviceAccounts.owner(name)).toContainText(owner(), { timeout: 15_000 }); // owner cell der se bharta hai
     });
 
-    test('a service account can be reassigned to another member', { tags: ['SIT-IAM-09', 'SIT-IAM-16', 'BEH-IAM-14'] }, async ({ app, browser, screen, agent }) => {
-      const name = newAccount('reassign');
-      await openAs({ app, browser, screen }, TENANT.msp, '/service-accounts');
-      await createAccount(agent, name);
+    test('a service account can be reassigned to another member', { tags: ['SIT-IAM-09', 'SIT-IAM-16', 'BEH-IAM-14'] }, async ({ agent, serviceAccounts }) => {
+      const name = data.name('reassign');
+      const newOwner = poolUser('shared').name; // setup ne ise bhi owner banne layak profile diya
+      await serviceAccounts.open();
+      await serviceAccounts.create(name, { owner: owner() });
 
-      await agent.act('reassign the owner of {name} to the first person the new-owner picker offers other than Test User', { params: { name: unique(name) } });
+      await agent.act('reassign the owner of the service account {name} to {owner} and confirm', { params: { name: unique(name), owner: unique(newOwner) } });
 
-      await agent.assert('{name} is now owned by someone other than Test User, as its drawer or the service accounts list shows', { params: { name: unique(name) } });
+      await agent.assert('a confirmation says the owner of {name} was reassigned, and its credentials and role were left as they were', { params: { name: unique(name) } });
+      await expect(serviceAccounts.owner(name)).toContainText(newOwner, { timeout: 15_000 });
     });
 
-    test('enabling a disabled service account makes it active again', { tags: ['BEH-IAM-12'] }, async ({ app, browser, screen, agent }) => {
-      const name = newAccount('off-on');
-      await openAs({ app, browser, screen }, TENANT.msp, '/service-accounts');
-      await createAccount(agent, name);
-      await agent.act('disable the service account {name} from its row actions menu and confirm', { params: { name: unique(name) } });
-      await agent.waitFor('{name} is Inactive', { params: { name: unique(name) } });
+    test('enabling a disabled service account makes it active again', { tags: ['BEH-IAM-12'] }, async ({ agent, serviceAccounts }) => {
+      const name = data.name('off-on');
+      await serviceAccounts.open();
+      await serviceAccounts.create(name, { owner: owner() });
+      await serviceAccounts.disable(name);
 
-      await agent.act('enable the service account {name} from its row actions menu', { params: { name: unique(name) } });
+      await agent.act('enable the service account {name} from its row actions menu and confirm', { params: { name: unique(name) } });
 
       await agent.assert('{name} is Active again', { params: { name: unique(name) } });
+      await expect(serviceAccounts.status(name)).toHaveText('Active');
     });
 
-    test('deleting a service account needs the word delete', { tags: ['BEH-IAM-12'] }, async ({ app, browser, screen, agent }) => {
-      const name = newAccount('delete-gate');
-      await openAs({ app, browser, screen }, TENANT.msp, '/service-accounts');
-      await createAccount(agent, name);
-      await agent.act('choose "Delete account" in the row actions menu of {name}', { params: { name: unique(name) } });
-      await agent.waitFor('a delete confirmation asks to type a word to confirm');
+    test('deleting a service account needs the word delete', { tags: ['BEH-IAM-12'] }, async ({ agent, screen, serviceAccounts }) => {
+      const name = data.name('delete-gate');
+      await serviceAccounts.open();
+      await serviceAccounts.create(name, { owner: owner() });
 
-      await agent.act('type {word} in the confirmation box', { params: { word: 'remove' } });
+      await agent.act('choose "Delete account" for {name}, type {word} in the confirmation box and stop; do not press delete', { params: { name: unique(name), word: 'remove' } });
 
-      await agent.assert('the button that would delete the service account is disabled');
+      const d = screen.getByTestId('sa-delete');
+      await agent.assert('the delete confirmation says the account and its credentials are removed for good, and its delete button is disabled because the typed word is not delete');
+      await expect(d.getByTestId('confirm-submit')).toBeDisabled();
+      await d.getByTestId('confirm-word').fill('delete');
+      await expect(d.getByTestId('confirm-submit')).toBeEnabled();
+      await d.getByTestId('confirm-cancel').tap();
     });
   });
 });

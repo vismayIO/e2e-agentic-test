@@ -8,7 +8,7 @@
 #        Login : E2E_USER_QA_USERNAME, E2E_USER_QA_PASSWORD 🔒            (optional)
 #        Staging basic auth: BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD 🔒   (optional)
 #        Notify: TEAMS_WEBHOOK_URL 🔒 / SLACK_WEBHOOK_URL 🔒               (optional)
-#        IAM   : IAM_ADMIN_EMAIL, MAILOSAUR_SERVER_ID, MAILOSAUR_API_KEY 🔒 (IAM suite ka OTP)
+#        Login : APP_ADMIN_EMAIL, MAILOSAUR_SERVER_ID, MAILOSAUR_API_KEY 🔒 (console admin ka OTP, sab modules)
 #   2. Pehle run pe variable group ko pipeline ke liye "Permit" karo.
 #   3. Project settings → Pipelines → Settings me "Limit job authorization scope" ON ho
 #      aur history download fail ho, to pipeline ke build service ko isi pipeline ka Read access do.
@@ -111,7 +111,7 @@ jobs:
           AZURE_OPENAI_DEPLOYMENT: $(AZURE_OPENAI_DEPLOYMENT)
           ANTHROPIC_API_KEY: $(ANTHROPIC_API_KEY)
           OPENAI_API_KEY: $(OPENAI_API_KEY)
-          IAM_ADMIN_EMAIL: $(IAM_ADMIN_EMAIL)
+          APP_ADMIN_EMAIL: $(APP_ADMIN_EMAIL)
           MAILOSAUR_API_KEY: $(MAILOSAUR_API_KEY)
           MAILOSAUR_SERVER_ID: $(MAILOSAUR_SERVER_ID)
           E2E_USER_QA_USERNAME: $(E2E_USER_QA_USERNAME)
