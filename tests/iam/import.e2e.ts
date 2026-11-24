@@ -10,14 +10,15 @@ const data = iamNames();
  * CSV import: upload → map → job → results file.
  * Brief: SIT-IAM-10 · BEH-IAM-09, 10, 11 · EX-IAM-10.1 (disabled person stays disabled)
  *
- * Ek hi CSV (sirf Mailosaur addresses — kisi asli insaan ko kuch nahi jaata), teen tests me ek ke baad ek:
- *   2 naye log (ek ka first name formula `=1+1`), ek maujooda member (pool user, apne hi naam se → updated,
- *   kuch nahi badalta), pehle naye ka duplicate, aur ek galat email. Tenant Owner file me nahi: import maujooda
- *   member ke details badalta hai, to toota guard asli owner ka naam badal deta (coverage.ts → BEH-IAM-13).
- * CSV test ke andar banti hai (pool setup ke baad hi padha ja sakta hai); serial group ki teeno tests ek hi
- * file use karti hain — group retry pe file dobara import hoti hai, to nayi CSV aur naye addresses.
- * Mailosaur domain tenant ke allowed domains (gmail.com) ke bahar hai, isliye "allow outside" on rehta hai.
- * Imported log seedha Active bante hain; baad ka IAM setup unhe delete karta hai.
+ * One CSV (Mailosaur addresses only — nothing reaches a real person), in three tests one after another:
+ *   2 new people (one with the formula `=1+1` as first name), one existing member (a pool user, under their
+ *   own name → updated, nothing changes), a duplicate of the first new one, and one invalid email. The Tenant
+ *   Owner is not in the file: an import changes an existing member's details, so a broken guard would rename
+ *   the real owner (coverage.ts → BEH-IAM-13).
+ * The CSV is written inside the test (the pool can only be read after setup); the serial group's three tests
+ * share one file — on a group retry the file is imported again, so a new CSV and new addresses.
+ * The Mailosaur domain is outside the tenant's allowed domains (gmail.com), so "allow outside" stays on.
+ * Imported people become Active directly; a later IAM setup deletes them.
  */
 function writeCsv(label: string) {
   const fresh = data.address(`${label}-new`);
@@ -33,18 +34,18 @@ function writeCsv(label: string) {
   mkdirSync('tmp/iam-import', { recursive: true });
   const file = `tmp/iam-import/${data.name(label)}.csv`;
   writeFileSync(file, rows.map((r) => r.join(',')).join('\n') + '\n');
-  // people = file ke alag log jo import hote hain: 2 naye + 1 maujooda member; baaki rows import nahi hoti.
+  // people = the distinct people in the file that get imported: 2 new + 1 existing member; the other rows are not imported.
   return { file, name: file.split('/').pop()!, total: rows.length - 1, people: 3, fresh, member: member.email };
 }
 
 let shared: ReturnType<typeof writeCsv> | undefined;
-/** Serial group ki ek hi CSV — pehli baar bulane pe banti hai. */
+/** The serial group's one CSV — written on the first call. */
 const groupCsv = () => (shared ??= writeCsv('import'));
 
 const IMPORT = 'import the file {file}: open Invite users, choose Import users, upload it, keep the automatic column mapping, turn on allowing users outside the allowed domains, and finish the import once';
 
 describe('IAM CSV import', { session: IAM_SESSION, tags: ['SIT-IAM-10'], agentContext: IAM_CONTEXT }, () => {
-  // Sirf upload aur mapping dekhna — import poora nahi hota.
+  // Only looks at upload and mapping — the import is not completed.
   test('the MSP import maps an access profile column, not a role column', { tags: ['EX-IAM-10.1', 'P2'] }, async ({ agent, screen, users, invite }) => {
     const csv = writeCsv('columns');
     await users.open();
@@ -58,7 +59,7 @@ describe('IAM CSV import', { session: IAM_SESSION, tags: ['SIT-IAM-10'], agentCo
     await invite.cancelImport();
   });
 
-  /** Ek hi CSV (2 naye addresses), is order me: import → wahi file dobara → results file. `sanity` pehle test pe: serial group poora chalta hai. */
+  /** One CSV (2 new addresses), in this order: import → the same file again → results file. `sanity` is on the first test: a serial group runs as a whole. */
   describe('one file', { serial: true }, () => {
     test('the import reports how many rows were invited, updated and not imported', { tags: ['sanity', 'BEH-IAM-10', 'P1'] }, async ({ agent, users, invite }) => {
       const csv = groupCsv();
@@ -76,14 +77,14 @@ describe('IAM CSV import', { session: IAM_SESSION, tags: ['SIT-IAM-10'], agentCo
       const csv = groupCsv();
       await users.open();
       await users.search(csv.fresh);
-      await users.disable(csv.fresh); // pehle import ka banaya person
+      await users.disable(csv.fresh); // the person the first import created
 
       await users.open();
 
       await agent.act(IMPORT, { params: { file: unique(csv.file) } });
 
-      // Dobara upload pe sab log pehle se hain: banner "Import of <file> is complete: 3 users were updated and
-      // 2 rows were not imported." — pehli baar jude 2 log + maujooda member "updated", koi "invited" nahi.
+      // On a re-upload everyone already exists: banner "Import of <file> is complete: 3 users were updated and
+      // 2 rows were not imported." — the 2 people added the first time + the existing member are "updated", nobody "invited".
       const banner = invite.importBanner(csv.name);
       await expect(banner).toContainText(`${csv.people} users were updated`, { timeout: 120_000 });
       await expect(banner, 'a re-upload must not invite anyone again').not.toContainText('invited');
@@ -98,7 +99,7 @@ describe('IAM CSV import', { session: IAM_SESSION, tags: ['SIT-IAM-10'], agentCo
       const csv = groupCsv();
       await users.open();
       await invitations.openImports();
-      await expect(invitations.importRow(csv.name).getByTestId('import-download')).toBeEnabled({ timeout: 120_000 }); // Processing khatam
+      await expect(invitations.importRow(csv.name).getByTestId('import-download')).toBeEnabled({ timeout: 120_000 }); // Processing has finished
 
       const download = await browser.waitForDownload(async () => {
         await agent.act('download the results file of the newest import of {file}', { params: { file: unique(csv.name) } });
@@ -108,12 +109,12 @@ describe('IAM CSV import', { session: IAM_SESSION, tags: ['SIT-IAM-10'], agentCo
 
       const status = (r: Record<string, string>) => `${r['Result: Status']} ${r['Result: Errors']} ${r['Result: Warnings']}`;
       const forEmail = (email: string) => rows.filter((r) => r.email?.toLowerCase() === email.toLowerCase());
-      expect(rows).toHaveLength(csv.total); // har input row ka ek outcome
+      expect(rows).toHaveLength(csv.total); // one outcome per input row
       expect(status(forEmail('not-an-email')[0])).toMatch(/invalid|valid email|format/i);
       expect(forEmail(csv.fresh)).toHaveLength(2);
       expect(status(forEmail(csv.fresh)[1])).toMatch(/duplicate/i);
       expect(status(forEmail(csv.member)[0])).toMatch(/updat|already|existing/i);
-      // Koi cell = + - @ se shuru na ho — spreadsheet me khulte hi formula ban jaata.
+      // No cell may start with = + - @ — it would become a formula as soon as a spreadsheet opens it.
       const risky = rows.flatMap((r) => Object.values(r)).filter((v) => /^[=+\-@]/.test(v));
       expect(risky).toEqual([]);
     });

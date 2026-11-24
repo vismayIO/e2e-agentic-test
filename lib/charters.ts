@@ -4,47 +4,47 @@ import { moduleFile } from './modules.ts';
 import { freshNames } from './names.ts';
 
 /**
- * Exploratory aur monkey testing ke charters. Charter = `e2e explore` ka ek goal: ek area, ek posture, ek
- * sentence, start route ke saath (e2e docs: bug-bash → "Plan charters"). Har module apne charters
- * `tests/<module>/charters.ts` me rakhta hai; yahan unhe load karke `e2e explore` ke arguments bante hain.
+ * Charters for exploratory and monkey testing. Charter = one goal for `e2e explore`: one area, one posture, one
+ * sentence, with a start route (e2e docs: bug-bash → "Plan charters"). Each module keeps its charters in
+ * `tests/<module>/charters.ts`; here they are loaded and turned into `e2e explore` arguments.
  * Strategy: docs/testing.md.
  */
 
 /**
- * Posture = persona. e2e.config.ts ke `agents` isi list se bante hain (har persona ka ek stance), isliye
- * yahan naam badle to config compile nahi hota jab tak wahan bhi na badle.
+ * Posture = persona. The `agents` in e2e.config.ts are built from this list (one stance per persona), so
+ * renaming one here stops the config from compiling until it is renamed there too.
  */
 export const PERSONAS = ['explorer', 'skeptic', 'fuzzer'] as const;
 export type Persona = (typeof PERSONAS)[number];
 
 export interface Charter {
-  /** Chhota slug (a-z, 0-9, -); report aur output folder ka naam. Module ka naam khud jud jaata hai. */
+  /** Short slug (a-z, 0-9, -); the name in the report and of the output folder. The module name is added automatically. */
   id: string;
   persona: Persona;
-  /** Ek sentence, "Starting at /route, …" se shuru. */
+  /** One sentence, starting with "Starting at /route, …". */
   goal: string;
-  /** Exploration steps (1–100); na ho to nightly.config ka default. */
+  /** Exploration steps (1–100); when absent, the default from nightly.config. */
   maxSteps?: number;
 }
 
-/** Monkey ka nishaana: ek create form. Maujooda records ke forms nahi — unme asli logon ka data hota hai. */
+/** Monkey's target: one create form. Not the forms of existing records — those hold real people's data. */
 export interface MonkeyForm {
   route: string;
-  /** Form tak kaise pahunchein, screen ke labels me: 'the "Create role" form'. */
+  /** How to reach the form, in the screen's labels: 'the "Create role" form'. */
   form: string;
 }
 
-/** `tests/<module>/charters.ts` ka default export. */
+/** The default export of `tests/<module>/charters.ts`. */
 export interface ModuleCharters {
-  /** Setup session jisse exploration signed-in shuru ho. Halka session rakho (`admin`): explore har charter pe uska setup chalata hai. */
+  /** Setup session that lets the exploration start signed in. Use the light `admin` session: explore runs its setup for every charter. */
   session: string;
-  /** Module ka data prefix (jaise `iam-e2e`): explorer jo banaye woh isi se shuru ho, taaki module ka cleanup use hata de. */
+  /** The module's data prefix (such as `iam-e2e`): whatever the explorer creates starts with it, so the module's cleanup removes it. */
   prefix: string;
   charters: readonly Charter[];
   monkey: readonly MonkeyForm[];
 }
 
-/** Chalne ke liye tayyar charter. */
+/** A charter ready to run. */
 export interface PlannedCharter {
   id: string;
   module: string;
@@ -57,15 +57,15 @@ export interface PlannedCharter {
 
 const explorers = new Map<string, ReturnType<typeof freshNames>>();
 /**
- * Is process ke explorer naam: `<prefix>-x-<id>-…`. Explorer jo bhi banaye uska naam `.name('')` se shuru ho —
- * id se module ka cleanup chal rahe exploration ka data nahi chhedta, aur baad me use hata deta hai.
+ * This process's explorer names: `<prefix>-x-<id>-…`. Whatever the explorer creates has a name starting with
+ * `.name('')` — by the id, the module's cleanup leaves a running exploration's data alone and removes it later.
  */
 export function explorerNames(prefix: string): ReturnType<typeof freshNames> {
   if (!explorers.has(prefix)) explorers.set(prefix, freshNames(`${prefix}-x`));
   return explorers.get(prefix)!;
 }
 
-/** Har charter ke goal ke aakhir me: shared tenant pe explorer kya bana/badal sakta hai. */
+/** Appended to every charter's goal: what the explorer may create or change on the shared tenant. */
 const rules = (prefix: string) =>
   ` Rules: every name you save, and the part before the @ of every email address you invite or import, starts with "${explorerNames(prefix).name('')}" — when an input cannot carry that prefix, type it, read the validation and cancel instead of saving. A record you did not create in this exploration may be opened only to read it: never tick, disable, delete, revoke or edit it. Choosing an existing role or organization inside a form you are filling in is fine.`;
 
@@ -77,7 +77,7 @@ export async function moduleCharters(module: string): Promise<ModuleCharters | u
   return file ? ((await import(pathToFileURL(file).href)) as { default: ModuleCharters }).default : undefined;
 }
 
-/** In modules ke likhe hue charters (jis module me charters.ts nahi, uske koi nahi). */
+/** The written charters of these modules (none for a module without charters.ts). */
 export async function charters(mods: readonly string[]): Promise<PlannedCharter[]> {
   const planned: PlannedCharter[] = [];
   for (const module of mods) {
@@ -90,17 +90,17 @@ export async function charters(mods: readonly string[]): Promise<PlannedCharter[
 }
 
 /**
- * Seed: `MONKEY_SEED` (koi purana run dobara chalane ke liye), warna aaj ki tareekh YYYYMMDD — to har raat
- * alag chunaav, aur report me likha seed wahi chunaav dobara deta hai.
+ * Seed: `MONKEY_SEED` (to repeat an earlier run), otherwise today's date as YYYYMMDD — so every night picks
+ * differently, and the seed written in the report gives the same pick again.
  */
 export function seedOfTheDay(): number {
   const given = env('MONKEY_SEED');
   if (given === undefined) return Number(new Date().toISOString().slice(0, 10).replaceAll('-', ''));
-  if (!/^\d+$/.test(given)) throw new Error(`MONKEY_SEED ek poora number hona chahiye, mila "${given}"`);
+  if (!/^\d+$/.test(given)) throw new Error(`MONKEY_SEED must be a whole number, got "${given}"`);
   return Number(given);
 }
 
-/** `items` me se `count` bina dohraaye, seeded (mulberry32): wahi seed → wahi chunaav. */
+/** `count` of `items` without repeats, seeded (mulberry32): same seed → same pick. */
 export function pick<T>(items: readonly T[], count: number, seed: number): T[] {
   let a = seed >>> 0;
   const next = () => {
@@ -115,7 +115,7 @@ export function pick<T>(items: readonly T[], count: number, seed: number): T[] {
   return picked;
 }
 
-/** Monkey: modules ke create forms me se `count` random, har ek pe fuzzer persona, `maxSteps` steps. */
+/** Monkey: `count` random create forms from the modules, the fuzzer persona on each, `maxSteps` steps. */
 export async function monkeyCharters(mods: readonly string[], count: number, seed: number, maxSteps: number): Promise<PlannedCharter[]> {
   const forms: { module: string; m: ModuleCharters; form: MonkeyForm }[] = [];
   for (const module of mods) {
@@ -128,7 +128,7 @@ export async function monkeyCharters(mods: readonly string[], count: number, see
   }));
 }
 
-/** `e2e explore` ke arguments ek charter ke liye; `budget.maxSteps` tab jab charter ka apna na ho. */
+/** `e2e explore` arguments for one charter; `budget.maxSteps` applies when the charter has none of its own. */
 export function exploreArgs(c: PlannedCharter, outputDir: string, budget: { maxSteps: number; charterMinutes: number }): string[] {
   return ['explore', c.goal, '--agent', c.persona, '--session', c.session, '--output', outputDir,
     '--reporter', 'list,markdown', '--max-steps', String(c.maxSteps ?? budget.maxSteps), '--timeout', String(budget.charterMinutes * 60_000)];

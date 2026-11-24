@@ -9,13 +9,13 @@ const data = iamNames();
  * Roles (MSP view, tenant "motadata"): custom role, clone, delete.
  * Brief: SIT-IAM-11 (steps 6, 9) · BEH-IAM-20 · Points to note ("A custom role needs a description and can be cloned")
  *
- * Har test apna role `iam-e2e-<id>-…` naam se banata hai; khatam ho chuke runs ka bacha data setup saaf karta hai.
- * Clone sirf built-in roles pe hai (custom pe menu item disabled).
+ * Each test creates its own role named `iam-e2e-<id>-…`; the setup sweeps what finished runs left behind.
+ * Clone exists only on built-in roles (on a custom role the menu item is disabled).
  */
 const ROLE_CONTEXT = `${IAM_CONTEXT} Roles are on the Roles page; a custom role is created with "Create role" (details, then permissions).`;
 
 describe('IAM roles', { session: IAM_SESSION, agentContext: ROLE_CONTEXT }, () => {
-  test('a custom role cannot move on without a description', knownBug('23 Nov 2026: sirf naam se hi "Next" enabled — description optional hai', 'SIT-IAM-11', 'P2'), async ({ agent, screen, roles }) => {
+  test('a custom role cannot move on without a description', knownBug('23 Nov 2026: "Next" is enabled with only a name — the description is optional', 'SIT-IAM-11', 'P2'), async ({ agent, screen, roles }) => {
     await roles.open();
 
     await agent.act('click Create role, enter the role name {name}, leave the description empty, press Next once if it can be pressed, and stop at whatever the builder shows; do not save anything', {
@@ -62,7 +62,7 @@ describe('IAM roles', { session: IAM_SESSION, agentContext: ROLE_CONTEXT }, () =
     await agent.act('open the delete dialog of the role {name} from its row actions menu and stop there; do not type anything and do not delete', { params: { name: unique(name) } });
 
     const d = screen.getByTestId('delete-role');
-    // Dialog pehle "Reading what holds this role" dikhata hai — impact aane ka intezaar.
+    // The dialog shows "Reading what holds this role" first — wait for the impact.
     await expect(d.getByTestId('delete-impact')).toBeVisible({ timeout: 30_000 });
     for (const mode of ['replaceExisting', 'replaceNew', 'remove']) await expect(d.getByTestId(`delete-mode-${mode}`)).toBeAttached();
     await expect(d.getByTestId('confirm-submit')).toBeDisabled();
@@ -70,12 +70,12 @@ describe('IAM roles', { session: IAM_SESSION, agentContext: ROLE_CONTEXT }, () =
   });
 
   // Brief BEH-IAM-20: "replace with an existing one, replace with a new one, or remove".
-  test('a role held by a profile can be replaced with a new one', knownBug('23 Nov 2026: "Replace with a new role" disabled — "Not available yet"', 'BEH-IAM-20', 'P1'), async ({ agent, screen, roles, profiles }) => {
+  test('a role held by a profile can be replaced with a new one', knownBug('23 Nov 2026: "Replace with a new role" is disabled — "Not available yet"', 'BEH-IAM-20', 'P1'), async ({ agent, screen, roles, profiles }) => {
     const name = data.name('replace-me');
     await roles.open();
     await roles.create(name);
     await profiles.open();
-    await profiles.create(data.name('replace-holder'), { roles: [name] }); // ab role kisi profile me hai
+    await profiles.create(data.name('replace-holder'), { roles: [name] }); // a profile now holds the role
     await roles.open();
     await roles.search(name);
 

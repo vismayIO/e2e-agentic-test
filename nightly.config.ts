@@ -2,43 +2,43 @@ import { env } from './lib/env.ts';
 import type { NightlyConfig } from './lib/types.ts';
 
 /**
- * Raat ko kya chalega aur kitna — yahi file badlo. Pipeline: docs/testing.md → "Nightly pipeline".
- * Nightly hamesha sab modules pe chalta hai; ek module ya ek suite ke liye `npm run suite -- …`.
+ * What runs at night and how much — change this file. Pipeline: docs/testing.md → "Nightly pipeline".
+ * The nightly always runs on all modules; for one module or one suite use `npm run suite -- …`.
  *
- * 1. smoke      : `smoke` tag wale tests. Fail to baaki stages nahi chalte.
- * 2. regression : sab tests ek hi run me; known bugs (knownBug) report me "Known bugs" me alag dikhte hain.
- * 3. explore    : likhe hue charters (tests/<module>/charters.ts) me se kuch, phir random monkey charters.
+ * 1. smoke      : tests tagged `smoke`. If it fails the other stages do not run.
+ * 2. regression : all tests in one run; known bugs (knownBug) are shown apart under "Known bugs" in the report.
+ * 3. explore    : some of the written charters (tests/<module>/charters.ts), then random monkey charters.
  *
- * Charters yahan nahi likhe jaate — woh modules se aate hain. Yahan sirf kya chale aur budget.
- * Cost: explore ka har step model calls karta hai. (charters × maxSteps) + (monkey.count × monkey.maxSteps) = raat
- * ka budget — modules badhne se yeh nahi badhta, seed (aaj ki tareekh) har raat alag charters chunta hai.
+ * Charters are not written here — they come from the modules. Here only what runs and the budget.
+ * Cost: every explore step makes model calls. (charters × maxSteps) + (monkey.count × monkey.maxSteps) = the night's
+ * budget — it does not grow with more modules; the seed (today's date) picks different charters every night.
  */
 const config: NightlyConfig = {
   appName: env('APP_NAME') ?? 'Motadata console',
 
-  // Har stage ki time limit (minutes). In sab ka jod + install CI job ke timeout se kam rahe (abhi 10 + 45 + 6×8 = 103).
+  // Time limit of each stage (minutes). Their sum + install must stay under the CI job's timeout (now 10 + 45 + 6×8 = 103).
   smoke: { enabled: true, maxMinutes: 10 },
 
   regression: { enabled: true, maxMinutes: 45 },
 
   explore: {
     enabled: true,
-    // Har raat itne likhe hue charters, sab modules me se
+    // This many written charters every night, from all modules
     charters: 4,
-    // Ek charter ke steps, jab charter khud maxSteps na bataye
+    // Steps of one charter, when the charter does not give its own maxSteps
     maxSteps: 8,
-    // Ek charter ki time limit
+    // Time limit of one charter
     charterMinutes: 8,
-    // Har raat itne random create forms pe fuzzer (0 = band), aur har ek ke steps
+    // The fuzzer on this many random create forms every night (0 = off), and the steps of each
     monkey: { count: 2, maxSteps: 6 },
   },
 
   verdict: {
-    // Is severity ya usse upar ka explore "issue" → RED. (5 critical, 4 high, 3 medium, 2 low, 1 trivial)
+    // An explore "issue" of this severity or higher → RED. (5 critical, 4 high, 3 medium, 2 low, 1 trivial)
     failOnIssueSeverity: 4,
   },
 
-  // Pipeline kab fail ho: 'red' (default) | 'never' (env NIGHTLY_FAIL_ON=never)
+  // When the pipeline fails: 'red' (default) | 'never' (env NIGHTLY_FAIL_ON=never)
   failPipelineOn: env('NIGHTLY_FAIL_ON') === 'never' ? 'never' : 'red',
 
   historyLimit: 30,

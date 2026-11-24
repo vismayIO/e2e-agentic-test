@@ -1,7 +1,7 @@
 import { expect } from 'e2e';
 import { type Ctx, Dialog, ListPage, chooseAction, dialog, openPage, toast } from '../../app/ui.ts';
 
-/** /roles — list, builder (/roles/new), clone aur delete dialogs. */
+/** /roles — list, builder (/roles/new), clone and delete dialogs. */
 export class RolesPage extends ListPage {
   constructor(fx: Ctx) {
     super(fx, fx.screen.getByTestId('roles-table'), { keyCell: (table) => table.getByTestId(/^role-name-\d+$/) });
@@ -11,7 +11,7 @@ export class RolesPage extends ListPage {
     await openPage(this.fx, '/roles', 'Roles');
   }
 
-  /** Builder: Details (naam, optional description) → Permissions → Save. Wapas list pe aata hai. */
+  /** Builder: Details (name, optional description) → Permissions → Save. It returns to the list. */
   async startCreate(name: string, description?: string): Promise<void> {
     const { screen } = this.fx;
     await screen.getByTestId('create-role', { visible: true }).tap();
@@ -23,7 +23,7 @@ export class RolesPage extends ListPage {
     const { screen } = this.fx;
     await this.startCreate(name, description);
     await screen.getByTestId('builder-next').tap();
-    // Bina permission ke app "Save a role with no permissions?" poochta hai; ek read permission kaafi hai.
+    // Without a permission the app asks "Save a role with no permissions?"; one read permission is enough.
     await screen.getByTestId('builder-cards').getByRole('checkbox', 'Read Role').check();
     await screen.getByTestId('builder-save').tap();
     await expect(toast(screen, `Role "${name}" saved`)).toBeVisible({ timeout: 30_000 });
@@ -31,7 +31,7 @@ export class RolesPage extends ListPage {
     await expect(this.row(name)).toBeVisible();
   }
 
-  /** Delete dialog: pehle "Reading what holds this role" load hota hai. */
+  /** Delete dialog: "Reading what holds this role" loads first. */
   async openDelete(role: string): Promise<Dialog> {
     await chooseAction(this.screen, this.row(role), 'delete');
     const d = dialog(this.screen, 'delete-role');
@@ -39,7 +39,7 @@ export class RolesPage extends ListPage {
     return d;
   }
 
-  /** "Remove without replacement" (default) ke saath delete. */
+  /** Delete with "Remove without replacement" (the default). */
   async delete(role: string): Promise<void> {
     const d = await this.openDelete(role);
     await d.root.getByTestId('delete-mode-remove').check();

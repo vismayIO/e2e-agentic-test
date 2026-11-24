@@ -3,8 +3,8 @@ import { existsSync, readdirSync } from 'node:fs';
 const ROOT = 'tests';
 
 /**
- * Modules = `tests/` ke woh folders jinme kam se kam ek `*.e2e.ts` ho (jaise `app`, `iam`).
- * Naya module jodne ke liye bas folder banao — suites, charters aur verify use khud dhoondh lete hain.
+ * Modules = the folders of `tests/` that hold at least one `*.e2e.ts` (such as `app`, `iam`).
+ * To add a module, just create the folder — suites, charters and verify find it by themselves.
  */
 export function modules(): string[] {
   return readdirSync(ROOT, { withFileTypes: true })
@@ -13,22 +13,22 @@ export function modules(): string[] {
     .sort();
 }
 
-/** Module naam → `tests/<module>` path; anjaan naam pe saaf error (typo se poora suite na chal jaaye). */
+/** Module name → `tests/<module>` path; a clear error on an unknown name (so a typo does not run the whole suite). */
 export function modulePaths(names: readonly string[]): string[] {
   const known = modules();
   for (const name of names) {
-    if (!known.includes(name)) throw new Error(`module "${name}" nahi mila — maujooda: ${known.join(', ')}`);
+    if (!known.includes(name)) throw new Error(`module "${name}" not found — existing: ${known.join(', ')}`);
   }
   return names.map((name) => `${ROOT}/${name}`);
 }
 
-/** Command line ke module naam → modules ki list: jaanche hue; koi na diya ho to sab. */
+/** Module names from the command line → list of modules: checked; all of them when none is given. */
 export function resolveModules(names: readonly string[]): string[] {
   modulePaths(names);
   return names.length ? [...names] : modules();
 }
 
-/** Module ki ek file ka path, agar woh hai (jaise charters.ts, coverage.ts). */
+/** The path of one of a module's files, if it exists (such as charters.ts, coverage.ts). */
 export function moduleFile(module: string, file: string): string | undefined {
   const path = `${ROOT}/${module}/${file}`;
   return existsSync(path) ? path : undefined;

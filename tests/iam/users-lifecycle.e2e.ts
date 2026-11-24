@@ -11,9 +11,9 @@ const data = iamNames();
  * Person lifecycle: disable / enable / delete, source of truth, end date, service-account owner guard.
  * Brief: SIT-IAM-04, 07, 08, 09, 14, 15 · BEH-IAM-05, 06, 07, 12, 14, 15 · EX-IAM-06.1, 07.2, 12.1, 14.1
  *
- * Disable/delete sirf setup ke disposable users pe (poolUser) — har test ka apna. Jo test sirf dialog
- * dekhta hai woh kabhi submit nahi karta. Asli insaan (directory-managed person) pe steps exact code hain,
- * agent sirf screen padhta hai. Tenant Owner ke guards automate nahi hain — coverage.ts dekho.
+ * Disable/delete only on the setup's disposable users (poolUser) — each test has its own. A test that only
+ * looks at a dialog never submits it. On a real person (directory-managed) the steps are exact code and the
+ * agent only reads the screen. The Tenant Owner's guards are not automated — see coverage.ts.
  */
 
 describe('IAM person lifecycle', { session: IAM_SESSION, agentContext: IAM_CONTEXT }, () => {
@@ -26,7 +26,7 @@ describe('IAM person lifecycle', { session: IAM_SESSION, agentContext: IAM_CONTE
       await agent.act('choose "Disable user" in the row actions menu of {email} and stop at the dialog that opens; do not confirm, type or press anything in it', { params: { email: unique(user.email) } });
 
       const d = screen.getByTestId('disable-confirm');
-      // Sirf dialog ka apna vaakya: uske neeche ki `disable-what` list ke items badal jaate hain.
+      // Only the dialog's own sentence: the items of the `disable-what` list below it change.
       await expect(d).toContainText(/every session ends/i);
       await expect(d).toContainText(/kept and restored on enable/i);
       await agent.assert('the disable confirmation for {name} says access ends immediately and every session ends, and that teams, access profiles and scope are kept and restored on enable', { params: { name: unique(user.name) } });
@@ -34,14 +34,14 @@ describe('IAM person lifecycle', { session: IAM_SESSION, agentContext: IAM_CONTE
       await expect(users.status(user.email)).toHaveText('Active');
     });
 
-    // Kaun delete hoga yeh code tay karta hai (search + theek 2 rows + selection), agent nahi: bulk delete me koi
-    // guard nahi, aur galat selection asli logon ko hata deta.
-    test('a bulk delete reports an outcome for every selected person', knownBug('23 Nov 2026: bulk jobs `queued` hi rehte hain (processed_rows 0), results me sirf "Still running"', 'EX-IAM-12.1'), async ({ agent, screen, users }) => {
+    // Code decides who gets deleted (search + exactly 2 rows + selection), not the agent: bulk delete has no
+    // guard, and a wrong selection would remove real people.
+    test('a bulk delete reports an outcome for every selected person', knownBug('23 Nov 2026: bulk jobs stay `queued` (processed_rows 0), and the results show only "Still running"', 'EX-IAM-12.1'), async ({ agent, screen, users }) => {
       const [a, b] = [poolUser('bulk-a'), poolUser('bulk-b')];
-      const prefix = a.email.slice(0, a.email.indexOf('bulk-a') + 'bulk-'.length); // sirf bulk-a, bulk-b
+      const prefix = a.email.slice(0, a.email.indexOf('bulk-a') + 'bulk-'.length); // only bulk-a, bulk-b
       await users.open();
       await users.search(b.email);
-      await users.disable(b.email); // ek Inactive, ek Active — brief ka "two of them still active"
+      await users.disable(b.email); // one Inactive, one Active — the brief's "two of them still active"
       await users.search(prefix);
       await expect(users.rows).toHaveCount(2);
       await users.select([a.email, b.email]);
@@ -58,14 +58,14 @@ describe('IAM person lifecycle', { session: IAM_SESSION, agentContext: IAM_CONTE
     });
   });
 
-  // retries 0: yeh ek fixed pool user ka state ek taraf badalta hai (disable / delete / sessions); retry ko badla hua user milta aur uska error asli wajah chhupa deta.
+  // retries 0: this changes a fixed pool user's state one way (disable / delete / sessions); a retry would get the changed user and its error would hide the real cause.
   test('a disabled person keeps no session', { tags: ['BEH-IAM-05', 'BEH-IAM-12', 'P1'], retries: 0 }, async ({ agent, users }) => {
     const user = poolUser('disabled-sessions');
     await users.open();
     await users.search(user.email);
     let drawer = await users.openProfile(user.email);
     await drawer.openSessions();
-    await expect(drawer.sessions.first(), 'setup ke sign-in ka session dikhna chahiye').toBeVisible();
+    await expect(drawer.sessions.first(), 'the session from the setup sign-in should be listed').toBeVisible();
     await drawer.close();
 
     await agent.act('disable the user {email} from its row actions menu and confirm the disable', { params: { email: unique(user.email) } });
@@ -73,13 +73,13 @@ describe('IAM person lifecycle', { session: IAM_SESSION, agentContext: IAM_CONTE
     await expect(users.status(user.email)).toHaveText('Inactive');
     drawer = await users.openProfile(user.email);
     await drawer.openSessions();
-    // Sessions ki list disable ke baad dobara load hoti hai — purani row hatne ka intezaar, phir agent dekhe.
+    // The sessions list reloads after the disable — wait for the old row to go, then the agent looks.
     await expect(drawer.sessions).toHaveCount(0);
     await expect(drawer.terminateAll).toBeDisabled();
     await agent.assert('the Sessions tab of this person lists no session and says there are no active sessions');
   });
 
-  /** Ek hi disposable person pe, is order me: disable → kisne kiya → enable. retries 0: group ek-tarfa hai. */
+  /** On one disposable person, in this order: disable → who did it → enable. retries 0: the group is one-way. */
   describe('a disabled person', { serial: true, retries: 0, tags: ['sanity', 'BEH-IAM-12', 'P1'] }, () => {
     test('an admin-disabled person’s record says an admin disabled them', { tags: ['SIT-IAM-15', 'EX-IAM-07.2', 'BEH-IAM-07'] }, async ({ agent, users }) => {
       const user = poolUser('disabled');
@@ -107,7 +107,7 @@ describe('IAM person lifecycle', { session: IAM_SESSION, agentContext: IAM_CONTE
     });
   });
 
-  /** Ek hi disposable person pe: delete ka lock → delete → wahi email dobara invite. retries 0: group ek-tarfa hai. */
+  /** On one disposable person: the delete lock → delete → invite the same email again. retries 0: the group is one-way. */
   describe('a deleted person', { serial: true, retries: 0, tags: ['SIT-IAM-07', 'BEH-IAM-12', 'P1'] }, () => {
     test('delete stays locked until the word delete is typed', async ({ agent, screen, users }) => {
       const user = poolUser('delete');
@@ -156,12 +156,12 @@ describe('IAM person lifecycle', { session: IAM_SESSION, agentContext: IAM_CONTE
 
   describe('who switched someone off', { tags: ['BEH-IAM-06', 'BEH-IAM-07', 'P1'] }, () => {
     /**
-     * Asli directory-managed person pe: confirm dabte hi woh hamesha ke liye Manual ho jaata. Isliye dialog tak ke
-     * steps exact code hain aur code sirf Cancel dabata hai; agent sirf warning ka matlab jaanchta hai.
+     * On a real directory-managed person: pressing confirm would make them Manual for good. So the steps up to
+     * the dialog are exact code and code presses only Cancel; the agent only checks what the warning means.
      */
     test('moving someone to Manual warns that offboarding them becomes the admins’ job', {
       tags: ['EX-IAM-06.1', 'SIT-IAM-04'],
-      skip: !IAM_SCIM_USER_EMAIL && 'IAM_SCIM_USER_EMAIL set nahi hai',
+      skip: !IAM_SCIM_USER_EMAIL && 'IAM_SCIM_USER_EMAIL is not set',
     }, async ({ agent, screen, users }) => {
       await users.open();
       await users.search(IAM_SCIM_USER_EMAIL);
@@ -183,14 +183,14 @@ describe('IAM person lifecycle', { session: IAM_SESSION, agentContext: IAM_CONTE
   });
 
   describe('account end date', { tags: ['BEH-IAM-15', 'SIT-IAM-08', 'P1'] }, () => {
-    test('an account end date can be set on a person', knownBug('23 Nov 2026: "Set an account expiry" hamesha disabled — "Account expiry can\'t be set yet"'), async ({ agent, screen, users }) => {
+    test('an account end date can be set on a person', knownBug('23 Nov 2026: "Set an account expiry" is always disabled — "Account expiry can\'t be set yet"'), async ({ agent, screen, users }) => {
       const user = poolUser('shared');
       await users.open();
       await users.search(user.email);
       await users.openProfile(user.email);
 
       await agent.act('click Edit on this profile and stop at the form that opens; do not change or save anything');
-      // Switch disabled ho to agent ke paas karne ko kuch nahi (woh "blocked" bolta, fail nahi) — isliye pehle code poochta hai.
+      // With the switch disabled the agent has nothing to do (it reports "blocked", not a failure) — so code asks first.
       const expiry = screen.getByTestId('edit-expiry-switch');
       await expect(expiry, 'brief: an account can have an end date').toBeEnabled();
 
@@ -201,8 +201,8 @@ describe('IAM person lifecycle', { session: IAM_SESSION, agentContext: IAM_CONTE
   });
 
   describe('service-account owner guard', { tags: ['BEH-IAM-14', 'SIT-IAM-09', 'P1'] }, () => {
-    test('an owner of an active service account cannot be disabled', knownBug('23 Nov 2026: service account ke owner pe bhi normal Disable dialog — koi guard nahi', 'EX-IAM-14.1'), async ({ agent, screen, users, serviceAccounts }) => {
-      const user = poolUser('sa-owner'); // setup ne ise access profile diya, isliye owner picker me hai
+    test('an owner of an active service account cannot be disabled', knownBug('23 Nov 2026: the owner of a service account also gets the normal Disable dialog — no guard', 'EX-IAM-14.1'), async ({ agent, screen, users, serviceAccounts }) => {
+      const user = poolUser('sa-owner'); // the setup gave this user an access profile, so they are in the owner picker
       const account = data.name('owner-bot');
       await serviceAccounts.open();
       await serviceAccounts.create(account, { owner: user.name });

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 
-/** RFC 4180 CSV (quoted fields, "" escape, CRLF, UTF-8 BOM) → header ke naam se rows; khaali lines chhodo. */
+/** RFC 4180 CSV (quoted fields, "" escape, CRLF, UTF-8 BOM) → rows keyed by header name; empty lines are dropped. */
 export function parseCsv(text: string): Record<string, string>[] {
   const rows: string[][] = [];
   let row: string[] = [];

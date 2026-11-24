@@ -4,12 +4,12 @@ import { ADMIN_SESSION } from './auth.ts';
 import { openPage, pageLoaded } from './ui.ts';
 
 /**
- * Console ka apna smoke (docs/testing.md → "Smoke"): build zinda hai? Sirf dekhna — kuch banata ya badalta nahi.
- * Har module apne zaroori pages apne `smoke.e2e.ts` me jaanchta hai; yahan woh jo sab modules se pehle chahiye:
- * sign-in page aata hai, aur signed-in console khulta hai aur uska navigation chalta hai.
+ * The console's own smoke (docs/testing.md → "Smoke"): is the build alive? Looking only — it creates and changes nothing.
+ * Each module checks its essential pages in its own `smoke.e2e.ts`; here is what every module needs first:
+ * the sign-in page comes up, and the signed-in console opens and its navigation works.
  */
 describe('console smoke', { tags: ['smoke', 'P0'] }, () => {
-  // Session nahi: test naye browser context me, yaani signed out, shuru hota hai.
+  // No session: the test starts in a new browser context, that is, signed out.
   test('signed out, the sign-in page offers an email sign-in code', async ({ app, agent, screen }) => {
     await app.open('/login');
 
@@ -19,11 +19,11 @@ describe('console smoke', { tags: ['smoke', 'P0'] }, () => {
   });
 
   test('signed in, the left navigation opens a page', { session: ADMIN_SESSION }, async ({ app, agent, browser, screen }) => {
-    await openPage({ app, browser, screen }, '/'); // sign-in page aaye to yahin saaf failure
+    await openPage({ app, browser, screen }, '/'); // a clear failure right here if the sign-in page comes up
 
     await agent.act('open "Roles" from the left navigation and stop as soon as the Roles page is shown');
 
-    // URL /roles hai, yaani app sign-in pe wapas nahi gaya; data aane tak ruko, phir agent screen ko ek baar jaanche.
+    // The URL is /roles, so the app did not go back to sign-in; wait for the data, then the agent checks the screen once.
     await expect(browser).toHaveURL(/\/roles$/);
     await expect(screen.getByRole('heading', 'Roles', { visible: true })).toBeVisible({ timeout: 30_000 });
     await pageLoaded(screen);

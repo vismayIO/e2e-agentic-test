@@ -2,17 +2,17 @@
  * Nightly QA pipeline — docs/testing.md → "Nightly pipeline"
  *
  *   node scripts/nightly.ts               # smoke → regression (+ known bugs) → explore + monkey → report → notify
- *   node scripts/nightly.ts -- --headed   # `--` ke baad ke flags har stage ke e2e ko jaate hain (scripts/suite.ts jaisa)
+ *   node scripts/nightly.ts -- --headed   # flags after `--` go to every stage's e2e (as in scripts/suite.ts)
  *
- * Smoke fail to baaki stages nahi chalte (toota build model calls na khaaye).
- * Kaun se stages aur kitna: nightly.config.ts. Ek hi suite ya module: scripts/suite.ts. Repo root se chalao (npm run nightly).
+ * If smoke fails the other stages do not run (a broken build should not burn model calls).
+ * Which stages and how much: nightly.config.ts. One suite or module: scripts/suite.ts. Run from the repo root (npm run nightly).
  *
- * Har stage ki apni time limit hai (nightly.config.ts), to raat khud khatam hoti hai. Report hamesha banti hai:
- * Ctrl-C se roka jaaye to jo stages poore hue unki.
+ * Every stage has its own time limit (nightly.config.ts), so the night ends by itself. The report is always written:
+ * when interrupted with Ctrl-C, for the stages that finished.
  *
  * Output:  nightly-report/index.html  (+ summary.md, summary.json, raw/)
- * History: .nightly-history/history.json  (CI cache me rakho → trend chart)
- * Exit:    130 agar beech me roka gaya, 1 agar verdict RED (aur failPipelineOn = 'red'), warna 0
+ * History: .nightly-history/history.json  (keep it in the CI cache → trend chart)
+ * Exit:    130 if interrupted, 1 if the verdict is RED (and failPipelineOn = 'red'), otherwise 0
  */
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -45,7 +45,7 @@ function ciRunUrl(): string | undefined {
   return undefined;
 }
 
-/** Aaj raat ke charters: likhe hue me se `explore.charters` (seed se chune), phir monkey — wahi seed. Sab modules. */
+/** Tonight's charters: `explore.charters` of the written ones (picked by the seed), then monkey — same seed. All modules. */
 async function plan(seed: number): Promise<PlannedCharter[]> {
   const { charters: count, monkey } = config.explore;
   const mods = modules();
@@ -53,23 +53,23 @@ async function plan(seed: number): Promise<PlannedCharter[]> {
 }
 
 async function runStages(): Promise<StageRuns> {
-  // Charters pehle hi: kharab MONKEY_SEED ya kisi charters.ts ka error yahin pakdo, do stages chalne ke baad nahi
+  // Charters first: catch a bad MONKEY_SEED or an error in a charters.ts here, not after two stages have run
   const seed = config.explore.enabled ? seedOfTheDay() : undefined;
   const planned = seed === undefined ? [] : await plan(seed);
   rmSync(RAW, { recursive: true, force: true });
   mkdirSync(RAW, { recursive: true });
 
   const runs: StageRuns = { phases: [], monkeySeed: seed };
-  /** Aage ke stages kyun nahi chalenge: smoke fail hua, ya run roka gaya. */
+  /** Why the later stages will not run: smoke failed, or the run was interrupted. */
   let stopped: string | undefined;
   const record = (p: PhaseRun) => runs.phases.push(p);
   const skip = (p: Stage) => record({ ...p, exitCode: null, durationMs: 0, skipped: stopped });
-  /** `--` ke baad ke flags (jaise --headed) har stage ke e2e ko. */
+  /** Flags after `--` (such as --headed), for every stage's e2e. */
   const extra = process.argv.slice(2).filter((a) => a !== '--');
-  /** Ek e2e process. Roka gaya stage (exit 130) adhoora hai: woh "nahi chala" darj hota hai aur agla shuru nahi hota. */
+  /** One e2e process. An interrupted stage (exit 130) is incomplete: it is recorded as "did not run" and the next one does not start. */
   const stage = async (p: Stage, argv: string[]): Promise<number | null> => {
     const { code, ms } = await runE2E([...argv, ...extra]);
-    if (code === INTERRUPTED) stopped = 'run beech me roka gaya (Ctrl-C / CI cancel)';
+    if (code === INTERRUPTED) stopped = 'the run was interrupted (Ctrl-C / CI cancel)';
     record({ ...p, exitCode: code, durationMs: ms, skipped: code === INTERRUPTED ? stopped : undefined });
     return code;
   };
@@ -78,10 +78,10 @@ async function runStages(): Promise<StageRuns> {
   if (config.smoke.enabled) {
     const outputDir = join(RAW, 'smoke');
     const code = await stage({ kind: 'smoke', id: 'smoke', label: 'Smoke tests', outputDir }, [...runArgs('smoke'), '--output', outputDir, '--max-duration', String(config.smoke.maxMinutes * 60_000)]);
-    if (code !== 0) stopped ??= `smoke pass nahi hua (exit ${code ?? 'signal'})`;
+    if (code !== 0) stopped ??= `smoke did not pass (exit ${code ?? 'signal'})`;
   }
 
-  // 2) Regression — sab tests ek hi run me; known bugs (knownBug) isi report se alag nikalte hain
+  // 2) Regression — all tests in one run; known bugs (knownBug) are split out of this same report
   if (config.regression.enabled) {
     const outputDir = join(RAW, 'regression');
     const p: Stage = { kind: 'regression', id: 'regression', label: 'Regression tests', outputDir };
@@ -89,9 +89,9 @@ async function runStages(): Promise<StageRuns> {
     else await stage(p, [...runArgs('regression'), '--output', outputDir, '--max-duration', String(config.regression.maxMinutes * 60_000)]);
   }
 
-  // 3) Exploration — raat ke charters ek ke baad ek (shared tenant pe load kam, logs saaf)
+  // 3) Exploration — the night's charters one after another (less load on the shared tenant, clean logs)
   if (config.explore.enabled) {
-    if (stopped) skip({ kind: 'explore', id: 'explore', label: 'Exploratory aur monkey charters', outputDir: join(RAW, 'explore') });
+    if (stopped) skip({ kind: 'explore', id: 'explore', label: 'Exploratory and monkey charters', outputDir: join(RAW, 'explore') });
     else {
       for (const c of planned) {
         const outputDir = join(RAW, 'explore', c.id);
@@ -104,7 +104,7 @@ async function runStages(): Promise<StageRuns> {
   return runs;
 }
 
-/** raw outputs report folder me copy — sessions (login state) aur ai-trace kabhi nahi */
+/** copy the raw outputs into the report folder — never sessions (login state) or ai-trace */
 function copyRaw(phases: PhaseRun[]): void {
   for (const p of phases) {
     if (p.skipped || !existsSync(p.outputDir)) continue;
@@ -129,7 +129,7 @@ async function main() {
   const startedAt = new Date().toISOString();
   const appUrl = env('APP_URL');
   if (!appUrl) {
-    console.error('APP_URL set karo — jis deployed console ko test karna hai (.env.example dekho)');
+    console.error('Set APP_URL — the deployed console to test (see .env.example)');
     process.exit(2);
   }
 

@@ -4,14 +4,14 @@ import { describe, test } from './fixtures.ts';
 import { IAM_CONTEXT } from './iam.ts';
 
 /**
- * IAM ka smoke (docs/testing.md → "Smoke"): build zinda hai? Har IAM page left navigation se khulta hai aur
- * asli data dikhata hai. Halke `admin` session pe — IAM ka setup (user pool) yahan nahi chalta — aur sirf
- * dekhna: koi test kuch banata, badalta ya hatata nahi.
+ * IAM's smoke (docs/testing.md → "Smoke"): is the build alive? Every IAM page opens from the left navigation
+ * and shows real data. On the light `admin` session — the IAM setup (user pool) does not run here — and
+ * read-only: no test creates, changes or removes anything.
  *
- * Har test ek doosre IAM page se shuru hota hai, agent navigation se page kholta hai, code asli rows ka
- * intezaar karta hai (page objects ke locators), phir agent batata hai ki list kya dikha rahi hai.
+ * Each test starts on another IAM page, the agent opens the page from the navigation, code waits for real
+ * rows (the page objects' locators), then the agent says what the list is showing.
  */
-const LIST_TIMEOUT = 30_000; // list server se aati hai; `openPage` bhi itna hi rukta hai
+const LIST_TIMEOUT = 30_000; // the list comes from the server; `openPage` waits this long too
 const goTo = (page: string) => `open "${page}" from the left navigation and stop when that page is shown; do not click anything else`;
 
 describe('IAM smoke', { session: ADMIN_SESSION, tags: ['smoke', 'P0'], agentContext: IAM_CONTEXT }, () => {

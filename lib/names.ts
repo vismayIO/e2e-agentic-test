@@ -1,33 +1,33 @@
 import { env } from './env.ts';
 
 /**
- * Test data ke naam aur Mailosaur addresses. Har module apna prefix rakhta hai (jaise `iam-e2e`), aur uska
- * setup pichhle runs ka usi prefix wala data saaf karta hai (tests/app/cleanup.ts).
+ * Names for test data, and Mailosaur addresses. Each module has its own prefix (such as `iam-e2e`), and its
+ * setup clears earlier runs' data with that prefix (tests/app/cleanup.ts).
  *
- * Test file (ya setup file) ke module scope me bulao. e2e retry aur serial group pe test file dobara import
- * karta hai, isliye har attempt ko naye naam milte hain — pehle attempt ka bacha data ("already exists",
- * "already in use") agle se nahi takrata. Ek attempt ke andar naam stable rehte hain.
+ * Call it in the module scope of a test file (or setup file). e2e re-imports the test file on a retry and for a
+ * serial group, so every attempt gets new names — data left by the first attempt ("already exists",
+ * "already in use") does not collide with the next. Within one attempt the names are stable.
  */
 export function freshNames(prefix: string) {
   const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 4)}`;
   const name = (label: string) => `${prefix}-${id}-${label}`;
   const inbox = env('MAILOSAUR_SERVER_ID');
   return {
-    /** Is attempt ka id — sab naamon me yahi, isliye ek prefix se is attempt ka saara data mil jaata hai. */
+    /** This attempt's id — the same in every name, so one prefix finds all of this attempt's data. */
     id,
     name,
-    /** Mailosaur address — kisi asli insaan ko mail nahi jaata. */
+    /** Mailosaur address — no mail goes to a real person. */
     address: (label: string) => {
-      if (!inbox) throw new Error('MAILOSAUR_SERVER_ID set karo — test addresses usi inbox ke hote hain');
+      if (!inbox) throw new Error('Set MAILOSAUR_SERVER_ID — test addresses belong to that inbox');
       return `${name(label)}@${inbox}.mailosaur.net`;
     },
   };
 }
 
 /**
- * `freshNames` ka banaya naam kab bana (id ke shuru me base36 `Date.now()` hai) — cleanup isi se chal rahe
- * runs ka data chhodta hai. Jo naam is shape ka nahi (haath se bana, ya decode hoke aane wale kal ka nikle)
- * uska koi waqt nahi: `undefined`.
+ * When a name made by `freshNames` was created (the id starts with a base36 `Date.now()`) — cleanup uses it to
+ * leave running runs' data alone. A name not of this shape (made by hand, or decoding to a time in the future)
+ * has no time: `undefined`.
  */
 export function createdAt(name: string, prefix: string): number | undefined {
   const id = name.toLowerCase().match(new RegExp(`^${prefix}-(?:x-)?([0-9a-z]+)-`))?.[1];

@@ -1,27 +1,27 @@
-/** Raat ki pipeline: smoke gate → full run (regression + known bugs) → exploratory charters → monkey. docs/testing.md */
+/** The nightly pipeline: smoke gate → full run (regression + known bugs) → exploratory charters → monkey. docs/testing.md */
 export interface NightlyConfig {
   appName: string;
   /**
-   * Har stage ki apni time limit (`maxMinutes`): raat khud khatam ho aur report hamesha bane — CI job ka
-   * timeout in sab ke jod se upar rakho (CI kill pe report nahi banti).
-   * Pehla gate: smoke fail to baaki stages nahi chalte (toota build model calls na khaaye).
+   * Each stage has its own time limit (`maxMinutes`): the night ends by itself and the report is always written —
+   * keep the CI job's timeout above the sum of them (a CI kill leaves no report).
+   * First gate: if smoke fails the other stages do not run (a broken build must not burn model calls).
    */
   smoke: { enabled: boolean; maxMinutes: number };
-  /** Poora suite ek hi run me; known bugs (knownBug) report me alag gine jaate hain. */
+  /** The whole suite in one run; known bugs (knownBug) are counted separately in the report. */
   regression: { enabled: boolean; maxMinutes: number };
   /**
-   * Raat ka exploration budget — modules badhne se raat lambi na ho, isliye ginti yahan tay hai:
-   * har raat `charters` likhe hue charters (sab modules me se, seed se ghoomte hue) + `monkey.count` monkey.
+   * The night's exploration budget — more modules must not make the night longer, so the counts are fixed here:
+   * every night `charters` written charters (from all modules, rotating by seed) + `monkey.count` monkey.
    */
   explore: {
     enabled: boolean;
-    /** Har raat kitne likhe hue charters. */
+    /** How many written charters every night. */
     charters: number;
-    /** Ek charter ke exploration steps (1–100), jab charter khud na bataye. */
+    /** Exploration steps of one charter (1–100), when the charter does not say. */
     maxSteps: number;
-    /** Ek charter ki time limit, minutes (3–120). */
+    /** Time limit of one charter, minutes (3–120). */
     charterMinutes: number;
-    /** Har raat itne random monkey charters (0 = band), aur har ek ke steps. */
+    /** This many random monkey charters every night (0 = off), and the steps of each. */
     monkey: { count: number; maxSteps: number };
   };
   verdict: { failOnIssueSeverity: number };
@@ -34,14 +34,14 @@ export type Verdict = 'green' | 'yellow' | 'red';
 export interface PhaseRun {
   kind: 'smoke' | 'regression' | 'explore';
   id: string;
-  /** Report me dikhne wala naam; explore ke liye charter ka goal. */
+  /** The name shown in the report; for explore, the charter's goal. */
   label: string;
   /** e2e output dir for this phase (relative to repo root) */
   outputDir: string;
   exitCode: number | null;
   durationMs: number;
   skipped?: string;
-  /** Explore: kis module ka charter, kis persona se, likha hua charter ya monkey. */
+  /** Explore: which module's charter, with which persona, written charter or monkey. */
   module?: string;
   persona?: string;
   charter?: 'charter' | 'monkey';
@@ -54,7 +54,7 @@ export interface NightlyRunMeta {
   finishedAt: string;
   ciRunUrl?: string;
   model?: string;
-  /** Monkey charters ka seed — wahi seed dobara do to wahi routes milte hain. */
+  /** The monkey charters' seed — give the same seed again to get the same routes. */
   monkeySeed?: number;
   phases: PhaseRun[];
 }

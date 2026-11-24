@@ -2,12 +2,12 @@ import type { Locator, Screen } from 'e2e';
 import { expect } from 'e2e';
 import { type Ctx, Dialog, ListPage, chooseAction, dialog, openPage, toast } from '../../app/ui.ts';
 
-/** /users — members aur pending invitations ki list, row menus, bulk bar. */
+/** /users — the list of members and pending invitations, row menus, bulk bar. */
 export class UsersPage extends ListPage {
   readonly bulkBar: Locator;
 
   constructor(fx: Ctx) {
-    // Key = email cell (uska naam sirf email hai; contact cell ka naam "Copy email: …" hai). Search server-side.
+    // Key = email cell (its name is the email only; the contact cell's name is "Copy email: …"). Search is server-side.
     super(fx, fx.screen.getByTestId('users-table'), {
       keyCell: (table) => table.getByRole('cell', /^[^\s:]+@[^\s]+$/),
       queryUrl: '**/v1/platform/membership/query',
@@ -19,7 +19,7 @@ export class UsersPage extends ListPage {
     await openPage(this.fx, '/users', 'Users');
   }
 
-  /** Email ka cell plain text hai, poora match. */
+  /** The email cell is plain text, full match. */
   status(email: string): Locator {
     return this.row(email).getByTestId('status-badge');
   }
@@ -28,7 +28,7 @@ export class UsersPage extends ListPage {
     await chooseAction(this.screen, this.row(email), item);
   }
 
-  /** Disable ka dialog — pehle ek chhota "Checking before disabling…" gate aata hai, phir yeh. */
+  /** The Disable dialog — a short "Checking before disabling…" gate shows first, then this. */
   async openDisable(email: string): Promise<Dialog> {
     await this.rowAction(email, 'disable');
     const d = dialog(this.screen, 'disable-confirm');
@@ -42,8 +42,8 @@ export class UsersPage extends ListPage {
   }
 
   /**
-   * Delete ka confirm dialog tak. Active person pe app pehle Disable dialog dikhata hai ("Disable and
-   * continue") aur wahi dialog phir Delete me badal jaata hai; Inactive pe seedha Delete.
+   * Up to the Delete confirm dialog. For an Active person the app first shows the Disable dialog ("Disable and
+   * continue") and that same dialog then turns into Delete; for an Inactive one, Delete directly.
    */
   async openDelete(email: string): Promise<Dialog> {
     await this.rowAction(email, 'delete');
@@ -72,17 +72,17 @@ export class UsersPage extends ListPage {
     await expect(this.row(email)).toHaveCount(0, { timeout: 15_000 });
   }
 
-  /** Bulk select: sab rows ek hi search me hone chahiye — search badalne se selection saaf ho jaata hai. */
+  /** Bulk select: all rows must be in one search — changing the search clears the selection. */
   async select(emails: string[]): Promise<void> {
     for (const email of emails) {
       const row = this.row(email);
-      await row.hover(); // checkbox hover pe hi tree me aata hai
+      await row.hover(); // the checkbox enters the tree only on hover
       await row.getByRole('checkbox').check();
     }
     await expect(this.bulkBar).toHaveAttribute('data-count', String(emails.length));
   }
 
-  /** Naam pe tap se profile drawer khulta hai (Invited row pe kuch nahi hota). */
+  /** A tap on the name opens the profile drawer (on an Invited row nothing happens). */
   async openProfile(email: string): Promise<UserDrawer> {
     await this.row(email).getByTestId(/^user-name-/).tap();
     const drawer = new UserDrawer(this.screen);
@@ -91,7 +91,7 @@ export class UsersPage extends ListPage {
   }
 }
 
-/** Profile drawer ("User management"). Drawer khula ho to tree me sirf yahi dikhta hai. */
+/** Profile drawer ("User management"). While the drawer is open, the tree shows only this. */
 export class UserDrawer {
   readonly root: Locator;
   readonly disabledBy: Locator;
@@ -122,7 +122,7 @@ export class UserDrawer {
   }
 }
 
-/** /account/sessions — admin ke apne sessions. */
+/** /account/sessions — the admin's own sessions. */
 export class MySessionsPage {
   readonly sessions: Locator;
   readonly current: Locator;

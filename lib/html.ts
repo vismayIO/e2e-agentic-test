@@ -1,4 +1,4 @@
-/** Nightly report — ek self-contained HTML page (light + dark), bina kisi server ke khulta hai. */
+/** Nightly report — one self-contained HTML page (light + dark) that opens without a server. */
 import type { HistoryEntry, NightlyRunMeta, Verdict } from './types.ts';
 import type { ExploreView, FindingView, KnownBugs, NightlySummary, RunView, TestFailure } from './e2e-report.ts';
 import { SEVERITY, firstLine, monkeyRerun, passedOfTotal, where } from './e2e-report.ts';
@@ -68,22 +68,22 @@ const errors = (list: { code?: string; message?: string }[]): string =>
 
 const skippedLine = (reason: string): string => `<p><b>Skipped</b> — ${esc(reason)}</p>`;
 
-/** Ek `e2e run` (smoke ya regression): failures, flaky, skip hue tests ki ginti, aur e2e ki apni poori report ka link. */
+/** One `e2e run` (smoke or regression): failures, flaky, the count of skipped tests, and a link to e2e's own full report. */
 function runSection(name: 'Smoke' | 'Regression', r: RunView): string {
   const clean = r.present && !r.failures.length && !r.runErrors.length;
   return `<section>
   <h2>${name} tests ${r.present ? `<span class="muted" style="font-weight:400">· ${passedOfTotal(r)} · ${fmtDur(r.durationMs)}</span>` : ''}</h2>
-  ${r.skipped ? skippedLine(r.skipped) : !r.present && !r.runErrors.length ? '<p class="muted">Is run me yeh stage nahi chala.</p>' : ''}
+  ${r.skipped ? skippedLine(r.skipped) : !r.present && !r.runErrors.length ? '<p class="muted">This stage did not run in this run.</p>' : ''}
   ${errors(r.runErrors)}
   ${r.failures.length ? `<div class="cards">${r.failures.map((t) => failureCard(t, 'failed')).join('')}</div>` : ''}
-  ${clean ? `<p class="ok-line"><span aria-hidden="true">✓</span> ${r.skippedTests ? `Jo ${r.passed} tests chale woh pass` : `Saare ${r.passed} tests pass`}</p>` : ''}
-  ${r.skippedTests ? `<p class="muted">${r.skippedTests} tests skip hue (chale nahi) — kaun se aur kyun, neeche poori report me.</p>` : ''}
-  ${r.flakyTests.length ? `<h3 style="margin-top:16px">Flaky (retry pe pass)</h3><div class="cards">${r.flakyTests.map((t) => failureCard(t, 'flaky')).join('')}</div>` : ''}
-  ${r.htmlReport ? `<p><a href="${esc(r.htmlReport)}" target="_blank" rel="noopener">Poori ${name.toLowerCase()} report (har test ke steps, screenshots, video) →</a></p>` : ''}
+  ${clean ? `<p class="ok-line"><span aria-hidden="true">✓</span> ${r.skippedTests ? `The ${r.passed} tests that ran passed` : `All ${r.passed} tests passed`}</p>` : ''}
+  ${r.skippedTests ? `<p class="muted">${r.skippedTests} tests were skipped (did not run) — which ones and why is in the full report below.</p>` : ''}
+  ${r.flakyTests.length ? `<h3 style="margin-top:16px">Flaky (passed on retry)</h3><div class="cards">${r.flakyTests.map((t) => failureCard(t, 'flaky')).join('')}</div>` : ''}
+  ${r.htmlReport ? `<p><a href="${esc(r.htmlReport)}" target="_blank" rel="noopener">Full ${name.toLowerCase()} report (every test's steps, screenshots, video) →</a></p>` : ''}
 </section>`;
 }
 
-/** Known bugs: jo ab pass hain (mark hatana baaki) pehle, phir jo ab bhi fail hain. Verdict sirf "fixed" se badalta hai. */
+/** Known bugs: those that now pass (mark still to remove) first, then those still failing. Only "fixed" changes the verdict. */
 function knownBugsSection(k: KnownBugs): string {
   if (!k.fixed.length && !k.failing.length) return '';
   const fixed = k.fixed.map((t) => `<article class="card">
@@ -93,9 +93,9 @@ function knownBugsSection(k: KnownBugs): string {
     </div>
   </article>`).join('');
   return `<section>
-  <h2>Known bugs <span class="muted" style="font-weight:400">· <span class="mono">knownBug</span> wale tests</span></h2>
-  ${fixed ? `<h3>Fixed — <span class="mono">knownBug</span> mark hatao (${k.fixed.length})</h3><p class="muted">Yeh tests ab pass hain. Mark hatate hi yeh aam regression tests ban jaate hain.</p><div class="cards">${fixed}</div>` : ''}
-  ${k.failing.length ? `<h3 style="margin-top:16px">Ab bhi fail (${k.failing.length})</h3><p class="muted">Pehle se pata hai — verdict nahi badalta.</p><div class="cards">${k.failing.map((t) => failureCard(t, 'known bug')).join('')}</div>` : ''}
+  <h2>Known bugs <span class="muted" style="font-weight:400">· tests marked <span class="mono">knownBug</span></span></h2>
+  ${fixed ? `<h3>Fixed — remove the <span class="mono">knownBug</span> mark (${k.fixed.length})</h3><p class="muted">These tests pass now. Once the mark is removed they are ordinary regression tests.</p><div class="cards">${fixed}</div>` : ''}
+  ${k.failing.length ? `<h3 style="margin-top:16px">Still failing (${k.failing.length})</h3><p class="muted">Already known — does not change the verdict.</p><div class="cards">${k.failing.map((t) => failureCard(t, 'known bug')).join('')}</div>` : ''}
 </section>`;
 }
 
@@ -115,14 +115,14 @@ function exploreSection(x: ExploreView): string {
     <p class="goal">“${esc(x.goal)}”</p>
     ${x.setupFailures.length ? `<div class="cards">${x.setupFailures.map((t) => failureCard(t, 'failed')).join('')}</div>` : ''}
     ${errors(x.runErrors)}
-    ${x.status === 'blocked' ? '<p><b class="st-blocked">Blocked</b> — agent is goal me kuch explore nahi kar paaya (koi step nahi chala, ya har step atak gaya). Neeche steps dekho.</p>' : ''}
+    ${x.status === 'blocked' ? '<p><b class="st-blocked">Blocked</b> — the agent could not explore anything for this goal (no step ran, or every step got stuck). See the steps below.</p>' : ''}
     ${x.summary ? `<div class="assessment"><div class="label">Agent assessment</div><p>${esc(x.summary)}</p></div>` : ''}
-    ${x.findings.length ? `<div class="cards">${x.findings.map(findingCard).join('')}</div>` : x.status === 'passed' ? '<p class="ok-line"><span aria-hidden="true">✓</span> Is goal me koi finding nahi</p>' : ''}
-    ${x.steps.length ? `<details><summary>Agent ne kya kiya (${x.steps.length} steps)</summary><table class="tbl"><thead><tr><th>#</th><th>Step</th><th>Status</th><th>Time</th></tr></thead><tbody>${stepRows}</tbody></table></details>` : ''}
+    ${x.findings.length ? `<div class="cards">${x.findings.map(findingCard).join('')}</div>` : x.status === 'passed' ? '<p class="ok-line"><span aria-hidden="true">✓</span> No findings for this goal</p>' : ''}
+    ${x.steps.length ? `<details><summary>What the agent did (${x.steps.length} steps)</summary><table class="tbl"><thead><tr><th>#</th><th>Step</th><th>Status</th><th>Time</th></tr></thead><tbody>${stepRows}</tbody></table></details>` : ''}
   </section>`;
 }
 
-/** Last N nights — status cells; har cell me icon + hover tooltip, neeche table view */
+/** Last N nights — status cells; each cell has an icon + hover tooltip, with a table view below */
 function trend(history: HistoryEntry[]): string {
   if (!history.length) return '';
   const cells = history.map((h, i) => {
@@ -139,7 +139,7 @@ function trend(history: HistoryEntry[]): string {
   return `<section>
     <h2>Last ${history.length} nights</h2>
     <div class="trend" role="list">${cells}</div>
-    <div class="legend"><span><i class="sw v-green"></i>✓ Healthy</span><span><i class="sw v-yellow"></i>! Needs attention</span><span><i class="sw v-red"></i>✕ Broken</span><span class="muted">← purana · aaj →</span></div>
+    <div class="legend"><span><i class="sw v-green"></i>✓ Healthy</span><span><i class="sw v-yellow"></i>! Needs attention</span><span><i class="sw v-red"></i>✕ Broken</span><span class="muted">← older · today →</span></div>
     <details><summary>Table view</summary><table class="tbl"><thead><tr><th>Night</th><th>Verdict</th><th>Passed</th><th>Failed</th><th>Flaky</th><th>Issues</th><th>Warnings</th><th>Duration</th></tr></thead><tbody>${rows}</tbody></table></details>
   </section>`;
 }
@@ -267,9 +267,9 @@ ${knownBugsSection(bugs)}
 
 <section>
   <h2>AI exploration</h2>
-  ${meta.monkeySeed !== undefined ? `<p class="muted">Seed <span class="mono">${meta.monkeySeed}</span> — aaj ke charters aur monkey forms isi se chune gaye. Wahi monkey forms dobara: <span class="mono">${esc(monkeyRerun(meta.monkeySeed))}</span></p>` : ''}
-  ${s.explore.length ? s.explore.map(exploreSection).join('') : '<p class="muted">Is run me koi exploration nahi chali. Charters: <span class="mono">tests/&lt;module&gt;/charters.ts</span></p>'}
-  <p class="muted" style="font-size:13px">Findings agent ke claims + screenshot evidence hain. Bug file karne se pehle “Actual” ko screenshot se mila lo.</p>
+  ${meta.monkeySeed !== undefined ? `<p class="muted">Seed <span class="mono">${meta.monkeySeed}</span> — today's charters and monkey forms were picked with it. The same monkey forms again: <span class="mono">${esc(monkeyRerun(meta.monkeySeed))}</span></p>` : ''}
+  ${s.explore.length ? s.explore.map(exploreSection).join('') : '<p class="muted">No exploration ran in this run. Charters: <span class="mono">tests/&lt;module&gt;/charters.ts</span></p>'}
+  <p class="muted" style="font-size:13px">Findings are the agent's claims + screenshot evidence. Before filing a bug, check “Actual” against the screenshot.</p>
 </section>
 
 <footer>e2e nightly · ${esc(meta.startedAt)} → ${esc(meta.finishedAt)} · phases: ${meta.phases.map((p) => `${esc(p.id)} (exit ${p.exitCode ?? '—'}${p.skipped ? ', skipped' : ''})`).join(', ')}</footer>
@@ -293,7 +293,7 @@ ${knownBugsSection(bugs)}
 </html>`;
 }
 
-/** Slack/Teams/PR me paste karne layak chhota markdown */
+/** Short markdown fit to paste into Slack/Teams/a PR */
 export function renderMarkdown(meta: NightlyRunMeta, s: NightlySummary): string {
   const r = s.regression;
   const bugs = s.knownBugs;
@@ -314,7 +314,7 @@ export function renderMarkdown(meta: NightlyRunMeta, s: NightlySummary): string 
     ...failed('### Failed tests', r.failures),
   ];
   if (bugs.fixed.length) {
-    lines.push('', '### Known bugs fixed — knownBug mark hatao');
+    lines.push('', '### Known bugs fixed — remove the knownBug mark');
     for (const t of bugs.fixed) lines.push(`- **${t.title}** (\`${where(t)}\`)`);
   }
   const top = s.explore.flatMap((x) => x.findings.map((f) => ({ x, f }))).filter(({ f }) => f.kind === 'issue');
@@ -322,6 +322,6 @@ export function renderMarkdown(meta: NightlyRunMeta, s: NightlySummary): string 
     lines.push('', '### Explore issues');
     for (const { x, f } of top.slice(0, 15)) lines.push(`- [${SEVERITY[f.severity] ?? f.severity}] **${f.title}**${f.path ? ` (\`${f.path}\`)` : ''} — _${x.id}_`);
   }
-  if (meta.monkeySeed !== undefined) lines.push('', `Seed ${meta.monkeySeed} — wahi monkey forms dobara: \`${monkeyRerun(meta.monkeySeed)}\``);
+  if (meta.monkeySeed !== undefined) lines.push('', `Seed ${meta.monkeySeed} — the same monkey forms again: \`${monkeyRerun(meta.monkeySeed)}\``);
   return lines.join('\n') + '\n';
 }

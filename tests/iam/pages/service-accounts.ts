@@ -3,8 +3,8 @@ import { expect } from 'e2e';
 import { type Ctx, Dialog, ListPage, chooseAction, dialog, openPage, toast } from '../../app/ui.ts';
 
 /**
- * Service accounts ke liye non-admin role. "End User" deployed app pe offer nahi hota, aur Tenant Admin /
- * Read-Only Auditor pe ek extra admin-tier confirm aata hai.
+ * A non-admin role for service accounts. "End User" is not offered on the deployed app, and Tenant Admin /
+ * Read-Only Auditor bring an extra admin-tier confirm.
  */
 export const SA_ROLE = 'Vendor';
 
@@ -21,7 +21,7 @@ export class ServiceAccountsPage extends ListPage {
     await openPage(this.fx, '/service-accounts', 'Service accounts');
   }
 
-  /** Naam prefix share karte hain, isliye poore naam wala cell. */
+  /** Names share a prefix, so the cell with the full name. */
   owner(name: string): Locator {
     return this.row(name).getByTestId('sa-owner');
   }
@@ -31,8 +31,8 @@ export class ServiceAccountsPage extends ListPage {
   }
 
   /**
-   * Owner hamesha picker se chuno (display name; picker email se nahi dhoondhta). Form "Defaults to you"
-   * kehta hai, par picker sirf direct access profile wale members dikhata hai — admin bhi nahi (23 Nov 2026).
+   * Always choose the owner from the picker (display name; the picker does not search by email). The form says
+   * "Defaults to you", but the picker lists only members with a direct access profile — not even the admin (23 Nov 2026).
    */
   async create(name: string, { owner, role = SA_ROLE }: { owner: string; role?: string }): Promise<void> {
     const { screen } = this.fx;
@@ -42,7 +42,7 @@ export class ServiceAccountsPage extends ListPage {
     if ((await ownerTrigger.textContent())?.trim() !== owner) {
       await ownerTrigger.tap();
       const popover = screen.getByTestId('sa-owner-popover');
-      await popover.getByRole('button', owner).tap(); // members der se aate hain; tab tak "No options"
+      await popover.getByRole('button', owner).tap(); // members arrive late; until then "No options"
       await popover.getByTestId('sa-owner-popover-search').press('Escape');
     }
     await expect(ownerTrigger).toHaveText(owner);
@@ -104,7 +104,7 @@ export class AccountDrawer {
     return this.root.getByTestId('sa-credentials').getByRole('listitem').filter({ hasText: name });
   }
 
-  /** Add credential form tak (naam + method), Generate se pehle. */
+  /** Up to the Add credential form (name + method), before Generate. */
   async startCredential(name: string): Promise<Locator> {
     await this.root.getByTestId('add-credential').tap();
     const form = this.screen.getByTestId('add-credential-drawer');
@@ -113,14 +113,14 @@ export class AccountDrawer {
     return form;
   }
 
-  /** Generate → "Credential created" dialog (secret sirf yahin, ek baar). */
+  /** Generate → "Credential created" dialog (the secret only here, once). */
   async generate(name: string): Promise<void> {
     const form = await this.startCredential(name);
     await form.getByTestId('add-credential-submit').tap();
     await this.secret.waitFor({ timeout: 30_000 });
   }
 
-  /** Secret dialog ka Done → wapas credentials list. */
+  /** Done on the secret dialog → back to the credentials list. */
   async done(): Promise<void> {
     await this.secret.getByTestId('confirm-submit').tap();
     await this.secret.waitFor({ state: 'detached' });

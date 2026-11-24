@@ -2,12 +2,12 @@ import type { Locator, Screen } from 'e2e';
 import { expect } from 'e2e';
 import { type Ctx, Dialog, ListPage, chooseAction, dialog, openPage, toast } from '../../app/ui.ts';
 
-/** Tenant ki apni organization ka naam profile form me (list aur drawer me yahi "motadata" dikhta hai). */
+/** The name of the tenant's own organization in the profile form (the list and drawer show it as "motadata"). */
 const OWN_ORG = 'MSP owner organization';
 
 type Expiry = 'permanent' | 'd7' | 'd30' | 'd90' | 'y1';
 
-/** Add holders ka expiry block (`add-holders-expiry`): switch off = permanent, warna ek preset. */
+/** The expiry block of Add holders (`add-holders-expiry`): switch off = permanent, otherwise a preset. */
 async function setExpiry(block: Locator, expiry: Expiry): Promise<void> {
   const toggle = block.getByTestId('add-holders-expiry-switch');
   if (expiry === 'permanent') {
@@ -36,9 +36,9 @@ export class AccessProfilesPage extends ListPage {
     await this.form.waitFor();
   }
 
-  /** Popover multi-select: option buttons hain (options nahi), aur pick ke baad popover khula rehta hai. */
+  /** Popover multi-select: the options are buttons (not options), and the popover stays open after a pick. */
   async pickRoles(roles: string[]): Promise<void> {
-    // Role chips trigger ke upar aa jaate hain aur tap rok lete hain (edit form) — keyboard se kholo.
+    // Role chips end up over the trigger and block the tap (edit form) — open it with the keyboard.
     await this.form.getByTestId('profile-roles-trigger').press('Enter');
     const popover = this.screen.getByTestId('profile-roles-popover');
     for (const role of roles) await popover.getByRole('button', role).tap();
@@ -46,7 +46,7 @@ export class AccessProfilesPage extends ListPage {
   }
 
   /**
-   * Profile banao (diye hue roles, tenant ki apni organization); app create ke baad uska drawer khud kholta hai — wahi lautao.
+   * Create a profile (the given roles, the tenant's own organization); after create the app opens its drawer by itself — return that.
    */
   async create(name: string, { roles = ['Approver'] } = {}): Promise<ProfileDrawer> {
     await this.startCreate();
@@ -71,12 +71,12 @@ export class AccessProfilesPage extends ListPage {
     return drawer;
   }
 
-  /** List row ke menu me "Delete access profile" — dialog aaye ya na aaye. */
+  /** "Delete access profile" in the list row's menu — whether or not a dialog follows. */
   async rowDelete(name: string): Promise<void> {
     await chooseAction(this.screen, this.row(name), 'delete');
   }
 
-  /** List row ke menu se delete dialog; pehle "Loading" aata hai. */
+  /** The delete dialog from the list row's menu; "Loading" shows first. */
   async openDelete(name: string): Promise<Dialog> {
     await this.rowDelete(name);
     const d = dialog(this.screen, 'delete-profile');
@@ -85,7 +85,7 @@ export class AccessProfilesPage extends ListPage {
     return d;
   }
 
-  /** Held profile: "Remove without replacement" + word; unheld: seedha confirm. */
+  /** Held profile: "Remove without replacement" + word; unheld: confirm directly. */
   async delete(name: string): Promise<void> {
     const d = await this.openDelete(name);
     if (await d.confirmWord.isVisible()) {
@@ -97,7 +97,7 @@ export class AccessProfilesPage extends ListPage {
   }
 }
 
-/** Profile drawer: Details / People / Teams tabs aur holders. */
+/** Profile drawer: Details / People / Teams tabs and holders. */
 export class ProfileDrawer {
   readonly root: Locator;
   readonly title: Locator;
@@ -117,16 +117,16 @@ export class ProfileDrawer {
   }
 
   /**
-   * People ya Teams tab pe ek holder jo profile seedha rakhta hai (naam / email substring se). People tab pe
-   * team ke through wale holders alag list (`holder-via-team`) me hote hain — ek hi insaan dono me ho sakta hai.
+   * A holder on the People or Teams tab who holds the profile directly (by name / email substring). On the People
+   * tab, holders through a team are in a separate list (`holder-via-team`) — one person can be in both.
    */
   holder(text: string): Locator {
     return this.root.getByTestId(/^holder-(direct|teams)$/).getByTestId(/^holder-\d+$/).filter({ hasText: text });
   }
 
   /**
-   * Add teams / Add people → holder chuno → expiry → Assign. `match` = team naam ya person ka email;
-   * holder list me person apne naam se dikhta hai, isliye `shownAs`.
+   * Add teams / Add people → choose the holder → expiry → Assign. `match` = team name or the person's email;
+   * the holder list shows a person by name, hence `shownAs`.
    */
   async addHolder(kind: 'teams' | 'people', match: string, expiry: Expiry = 'permanent', shownAs = match): Promise<void> {
     await this.tab(kind);

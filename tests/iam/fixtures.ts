@@ -7,9 +7,9 @@ import { ServiceAccountsPage } from './pages/service-accounts.ts';
 import { MySessionsPage, UsersPage } from './pages/users.ts';
 
 /**
- * IAM tests ka `test`: page objects fixtures ke roop me. e2e fixture tabhi banata hai jab test use naam
- * se maange, isliye ek hi `test` me saare rakhna sasta hai. `agent` jaan-boojh ke kisi fixture me nahi —
- * jo method agent chalata hai woh use argument me leta hai, taaki exact tests ko model na chahiye.
+ * The `test` of the IAM tests: page objects as fixtures. e2e builds a fixture only when a test asks for it by
+ * name, so keeping them all in one `test` is cheap. `agent` is deliberately in no fixture — a method that
+ * drives the agent takes it as an argument, so that exact tests need no model.
  */
 export const test = base.extend<{
   users: UsersPage;
@@ -19,7 +19,7 @@ export const test = base.extend<{
   roles: RolesPage;
   profiles: AccessProfilesPage;
   serviceAccounts: ServiceAccountsPage;
-  /** Ek naya profile jo maujooda team `IAM_TEAM` ko diya gaya hai; test ke baad hat jaata hai. Lautata hai profile ka naam. */
+  /** A new profile given to the existing team `IAM_TEAM`; removed after the test. Returns the profile's name. */
   teamProfile: string;
 }>({
   users: async ({ app, browser, screen }, use) => use(new UsersPage({ app, browser, screen })),
@@ -29,8 +29,8 @@ export const test = base.extend<{
   roles: async ({ app, browser, screen }, use) => use(new RolesPage({ app, browser, screen })),
   profiles: async ({ app, browser, screen }, use) => use(new AccessProfilesPage({ app, browser, screen })),
   serviceAccounts: async ({ app, browser, screen }, use) => use(new ServiceAccountsPage({ app, browser, screen })),
-  // Team asli hai: jab tak profile rahe, uske har sadasya ke paas us profile ka access hai. Isliye hatana fixture
-  // ke teardown me — woh test fail ya time out hone pe bhi apne budget (cleanupTimeout) ke saath chalta hai.
+  // The team is real: while the profile exists, every member has that profile's access. So the removal is in the
+  // fixture's teardown — it runs with its own budget (cleanupTimeout) even when the test fails or times out.
   teamProfile: async ({ profiles }, use) => {
     const name = iamNames().name('team');
     await profiles.open();

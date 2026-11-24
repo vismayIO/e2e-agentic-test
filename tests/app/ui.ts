@@ -3,16 +3,16 @@ import { expect } from 'e2e';
 import type { WebFixtures } from '@e2e-dev/web';
 
 /**
- * Motadata console ka UI kit — har module ke page objects isi pe bante hain. Locators deployed app ke
- * test ids se hain: har dialog, menu, toast aur drawer `<main>` ke bahar portal me render hota hai, aur
- * `confirm-submit`, `row-actions-trigger`, `row-actions-menu` jaise test ids har jagah dohraaye jaate hain —
- * isliye har locator pehle apne dialog/row ke andar scope hota hai.
+ * The Motadata console's UI kit — every module's page objects are built on it. Locators use the deployed
+ * app's test ids: every dialog, menu, toast and drawer renders in a portal outside `<main>`, and test ids
+ * such as `confirm-submit`, `row-actions-trigger`, `row-actions-menu` are repeated everywhere —
+ * so every locator is first scoped inside its own dialog/row.
  */
 export type Ctx = Pick<TestFixtures & WebFixtures, 'app' | 'browser' | 'screen'>;
 
 /**
- * Saved session ke saath `path` kholo: tab tak ruko jab tak ya to page ka heading dikhe ya sign-in page —
- * dono me se jo bhi pehle aaye — aur sign-in aaya ho to saaf message ke saath fail.
+ * Open `path` with the saved session: wait until either the page's heading or the sign-in page shows —
+ * whichever comes first — and fail with a clear message if it was sign-in.
  */
 export async function openPage({ app, screen }: Ctx, path: string, heading?: string): Promise<void> {
   await app.open(path);
@@ -23,17 +23,17 @@ export async function openPage({ app, screen }: Ctx, path: string, heading?: str
   await pageLoaded(screen);
 }
 
-/** Data server se aata hai: tab tak ruko jab tak koi "Loading …" status na bache. */
+/** Data comes from the server: wait until no "Loading …" status is left. */
 export async function pageLoaded(screen: Screen): Promise<void> {
   await screen.getByRole('main').waitFor();
   await expect(screen.getByRole('status', /^Loading/)).toHaveCount(0, { timeout: 30_000 });
 }
 
-/** Toasts stack hote hain (naya sabse upar) aur kuch second rehte hain: hamesha title se filter karo. */
+/** Toasts stack (newest on top) and stay for a few seconds: always filter by title. */
 export const toast = (screen: Screen, title: string | RegExp): Locator =>
   screen.getByTestId('toast').filter({ hasText: title }).first();
 
-/** Ek confirm dialog (har dialog me `confirm-submit` / `confirm-cancel`, delete wale me `confirm-word`). */
+/** A confirm dialog (every dialog has `confirm-submit` / `confirm-cancel`, a delete one also `confirm-word`). */
 export class Dialog {
   readonly submit: Locator;
   readonly cancel: Locator;
@@ -48,7 +48,7 @@ export class Dialog {
     this.confirmWord = root.getByTestId('confirm-word');
   }
 
-  /** Submit ek baar, aur tab tak ruko jab tak dialog band na ho (submit ke dauraan buttons disabled rehte hain). */
+  /** Submit once, and wait until the dialog closes (the buttons stay disabled during the submit). */
   async confirm(timeout = 30_000): Promise<void> {
     await expect(this.submit).toBeEnabled({ timeout });
     await this.submit.tap();
@@ -63,21 +63,22 @@ export class Dialog {
 
 export const dialog = (screen: Screen, testId: string) => new Dialog(screen.getByTestId(testId));
 
-/** Row (ya drawer header) ka "⋯" menu kholo aur ek item chuno. Menu portal hai, isliye screen se. */
+/** Open the "⋯" menu of a row (or drawer header) and choose an item. The menu is a portal, so from screen. */
 export async function chooseAction(screen: Screen, scope: Locator, item: string): Promise<void> {
   await scope.getByTestId('row-actions-trigger').tap();
   await screen.getByTestId('row-actions-menu').getByTestId(`row-actions-menu-${item}`).tap();
 }
 
 /**
- * List page: search box, data rows, aur `keyCell` — table ke woh nodes jinka text sirf item ka naam ya email
- * ho (jaise `role-name-<id>`). Row ka poora text cells ko bina space ke jod deta hai ("…@x.netActiveManual"),
- * isliye key wahan se nahi padhte.
+ * List page: search box, data rows, and `keyCell` — the table nodes whose text is only the item's name or
+ * email (such as `role-name-<id>`). A row's full text joins the cells without spaces ("…@x.netActiveManual"),
+ * so the key is not read from there.
  *
- * Kuch lists ka search server-side aur debounced hai (`queryUrl`): fill ke saath us request ka jawab bhi
- * ruko, warna pichhli query ka nateeja (jaise "No … match") naya maan liya jaata. Kuch lists load ke thodi
- * der baad apni pichhli search state wapas lagati hain aur turant kiya `fill` mita deti hain — isliye box
- * me value na ho to dobara bharo. Settled = load khatam (rows ya empty state) aur query se bemel koi row nahi.
+ * Some lists search server-side and debounced (`queryUrl`): with the fill, also wait for that request's
+ * response, or the previous query's result (such as "No … match") would be taken as the new one. Some lists
+ * re-apply their previous search state shortly after load and wipe a `fill` done right away — so fill again
+ * when the box does not hold the value. Settled = load finished (rows or empty state) and no row that does
+ * not match the query.
  */
 export class ListPage {
   readonly fx: Ctx;
@@ -112,12 +113,12 @@ export class ListPage {
       .toBe(0);
   }
 
-  /** Woh row jiske key cell me yahi poora text ho — "Technician" "Client Technician" se nahi milta. */
+  /** The row whose key cell holds exactly this text — "Technician" does not match "Client Technician". */
   row(key: string): Locator {
     return this.rows.filter({ has: this.screen.getByText(key) });
   }
 
-  /** Dikh rahi rows ke keys jo `prefix` se shuru hon (case ka farak nahi). */
+  /** Keys of the visible rows that start with `prefix` (case-insensitive). */
   async keys(prefix: string): Promise<string[]> {
     const p = prefix.toLowerCase();
     return (await this.keyCell.allTextContents())
@@ -126,11 +127,11 @@ export class ListPage {
   }
 }
 
-/** Kal / N din baad ki tareekh, app ke formats me. */
+/** The date tomorrow / N days from now, for the app's formats. */
 export function daysFromNow(days: number): Date {
   const d = new Date();
   d.setDate(d.getDate() + days);
   return d;
 }
-/** "30 Nov 2026" — holder lines aur assignment rows ka format. */
+/** "30 Nov 2026" — the format of holder lines and assignment rows. */
 export const shortDate = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });

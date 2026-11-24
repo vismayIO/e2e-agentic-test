@@ -5,8 +5,8 @@ import { gateway } from 'ai';
 import { env } from './env.ts';
 
 /**
- * Agent ka model — jo key mili, wahi provider (upar se neeche pehla). Ek hi table se model bhi banta hai aur
- * report me dikhne wala naam bhi, taaki dono kabhi alag na hon. Key na ho to AI Gateway.
+ * The agent's model — the provider whose key is set (first from the top). One table builds both the model and
+ * the name shown in the report, so the two never differ. With no key, AI Gateway.
  */
 const PROVIDERS = [
   { key: 'AZURE_API_KEY', name: 'azure', id: () => env('AZURE_OPENAI_DEPLOYMENT') ?? 'gpt-6-luna', make: azure },
@@ -22,7 +22,7 @@ export const pickModel = () => {
   return p.make(p.id());
 };
 
-/** "anthropic/claude-sonnet-5-5" — nightly report aur notification ke liye. */
+/** "anthropic/claude-sonnet-5-5" — for the nightly report and the notification. */
 export const modelLabel = () => {
   const p = provider();
   return `${p.name}/${p.id()}`;

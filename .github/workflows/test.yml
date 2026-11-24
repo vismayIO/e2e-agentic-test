@@ -1,5 +1,5 @@
-# Har push aur pull request pe `npm test`: typecheck + verify (tags, brief coverage, charters, npm scripts).
-# App nahi khulta, model call nahi, koi secret nahi — sirf do repo variables, jo tests collect hote waqt padhe jaate hain.
+# `npm test` on every push and pull request: typecheck + verify (tags, brief coverage, charters, npm scripts).
+# The app is not opened, no model call, no secret — only two repo variables, which are read while tests are collected.
 
 name: test
 

@@ -3,26 +3,26 @@ import { describe, test } from './fixtures.ts';
 import { IAM_CONTEXT, IAM_SESSION, iamNames, poolUser } from './iam.ts';
 
 /**
- * Email invitation: sirf email, allowed domains, duplicate addresses.
+ * Email invitation: email only, allowed domains, duplicate addresses.
  * Brief: SIT-IAM-01 (steps 3-4) · BEH-IAM-09, 10, 11
  *
- * Har test me jo kaam jaancha jaata hai woh agent karta hai (admin ki zubaan me); nateeja do tarah jaancha
- * jaata hai — pehle code (screen/list ki asli state, jo load hone ka intezaar karta hai), phir agent.assert
- * (sirf woh jo us pal screen pe dikh raha hai).
+ * In every test the agent does the work under test (in the admin's words); the result is checked two ways —
+ * first by code (the real state of the screen/list, which waits for loading), then by agent.assert (only
+ * what is on screen at that moment).
  *
- * Tenant "motadata" ka allowed domain `gmail.com` hai, isliye Mailosaur address bahar ka domain hai:
- * invite bhejne ke liye "allow outside" choice zaroori hai. Bache invites baad ka IAM setup cancel karta hai.
+ * Tenant "motadata" has the allowed domain `gmail.com`, so a Mailosaur address is an outside domain: sending
+ * the invite needs the "allow outside" choice. A later IAM setup cancels the invites left behind.
  */
 const data = iamNames();
 
 /**
- * Jis invite ka sahi nateeja inkaar hai: goal "invite karo" nahi kehta (agent inkaar ko apni nakaami maan ke
- * dobara bhejta ya step fail karta) — sirf form bharna, ek baar Send, aur jo dikhe wahin rukna.
+ * For an invite whose correct result is a refusal: the goal does not say "invite" (the agent would take the
+ * refusal as its own failure and send again or fail the step) — only fill the form, Send once, and stop at what shows.
  */
 const SEND_ONCE = 'type {email} in the invite email field, tick the box that allows users from outside the permitted domains, press Send invite once and stop at whatever the form shows next';
 
 describe('IAM email invitation', { session: IAM_SESSION, agentContext: IAM_CONTEXT }, () => {
-  /** Ek hi address pe, is order me: invite → wahi address dobara. */
+  /** On one address, in this order: invite → the same address again. */
   describe('one address', { serial: true }, () => {
     const invitee = data.address('invitee');
 
@@ -40,13 +40,13 @@ describe('IAM email invitation', { session: IAM_SESSION, agentContext: IAM_CONTE
       await agent.assert('the users list shows {email} with the status Invited and the source of truth Manual', { params: { email: unique(invitee) } });
     });
 
-    // Deployed app (23 Nov 2026): pending invite wale address pe dobara invite refuse hota hai — drawer khula
-    // rehta hai aur banner kehta hai "0 invited · 1 refused: <email> (the email address is already in use)".
+    // Deployed app (23 Nov 2026): a second invite to an address with a pending invite is refused — the drawer
+    // stays open and the banner says "0 invited · 1 refused: <email> (the email address is already in use)".
     test('a person with a pending invitation is not invited twice', { tags: ['BEH-IAM-10', 'P1'] }, async ({ agent, users, invite }) => {
       await users.open();
       await invite.openEmailForm();
 
-      await agent.act(SEND_ONCE, { params: { email: unique(invitee) } }); // pehle test ne ise invite kiya hai — abhi pending
+      await agent.act(SEND_ONCE, { params: { email: unique(invitee) } }); // the first test invited this address — still pending
 
       await expect(invite.banner, 'the pending address should be refused').toContainText('0 invited');
       await expect(invite.banner).toContainText(/refused/);
@@ -64,7 +64,7 @@ describe('IAM email invitation', { session: IAM_SESSION, agentContext: IAM_CONTE
 
     await agent.act('type {email} into the invite email field and stop; do not tick any box and do not send', { params: { email: unique(data.address('outside')) } });
 
-    // Warning allowed-domain list ke server jawab ke baad aati hai — pehle uska intezaar.
+    // The warning appears after the server returns the allowed-domain list — wait for it first.
     await expect(invite.domainWarning).toContainText('is not an allowed domain for this organization');
     await expect(invite.send).toBeDisabled();
     await agent.assert('a warning says the domain of the address is not an allowed domain for this organization, a checkbox offers to allow users from outside the permitted domains, and the Send invite button is disabled');
@@ -73,7 +73,7 @@ describe('IAM email invitation', { session: IAM_SESSION, agentContext: IAM_CONTE
   });
 
   test('an address on an allowed domain clears the domain warning', { tags: ['SIT-IAM-01', 'BEH-IAM-11', 'P2'] }, async ({ agent, users, invite }) => {
-    const inside = `${data.name('inside')}@gmail.com`; // sirf likha jaata hai, bheja nahi
+    const inside = `${data.name('inside')}@gmail.com`; // only typed, never sent
     await users.open();
     await invite.openEmailForm();
     await invite.emails.fill(data.address('outside'));
@@ -86,8 +86,8 @@ describe('IAM email invitation', { session: IAM_SESSION, agentContext: IAM_CONTE
     await agent.assert('the invite form shows no warning about a domain that is not allowed');
   });
 
-  // Pool user (Active member) ka email, upper case aur spaces ke saath — admin ka apna email kabhi nahi bhejte.
-  // 23 Nov 2026: app ise Send pe refuse karta hai ("already in use") — pehle (20 Nov) ka known bug ab nahi hai.
+  // A pool user's (Active member's) email, in upper case with spaces — the admin's own email is never sent.
+  // 23 Nov 2026: the app refuses it on Send ("already in use") — the earlier (20 Nov) known bug is gone.
   test('an existing member is matched however the email is typed', { tags: ['BEH-IAM-09', 'P1'] }, async ({ agent, users, invite }) => {
     const member = poolUser('shared');
     await users.open();

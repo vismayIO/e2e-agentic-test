@@ -8,12 +8,12 @@ import { IAM_CONTEXT, IAM_SESSION, IAM_TEAM, iamNames, poolUser } from './iam.ts
  * Access profiles (MSP view, organization "motadata").
  * Brief: SIT-IAM-02, 08, 11 · BEH-IAM-15, 19, 20 · EX-IAM-19.1 · Points to note
  *
- * Precondition (profile, holders) page objects se; jaancha jaane wala kaam agent karta hai, aur nateeja
- * code + agent.assert dono jaanchte hain — code pehle, kyunki woh load hone ka intezaar karta hai aur
- * agent.assert screen ko ek hi baar dekhta hai. Har test apna profile `iam-e2e-<id>-…` banata hai (role Approver,
- * apni organization) aur holders sirf pool users hote hain; baad ka IAM setup profile hatata hai (holders ke
- * saath). Sirf "team ka profile sadasya pe" wala test maujooda team (`IAM_TEAM`) ko holder banata hai, aur
- * apna profile khud hi hata deta hai.
+ * Preconditions (profile, holders) come from page objects; the agent does the work under test, and both code
+ * and agent.assert check the result — code first, because it waits for loading while agent.assert looks at
+ * the screen only once. Each test creates its own profile `iam-e2e-<id>-…` (role Approver, its own
+ * organization) and only pool users are holders; a later IAM setup removes the profile (with its holders).
+ * Only the "team's profile on a member" test makes the existing team (`IAM_TEAM`) a holder, and it removes
+ * its own profile itself.
  */
 const data = iamNames();
 
@@ -54,12 +54,12 @@ describe('IAM access profiles', { session: IAM_SESSION, agentContext: IAM_CONTEX
     await agent.act('give this access profile directly to the person {email} with no expiry, and assign it', { params: { email: unique(holder.email) } });
 
     await drawer.tab('people');
-    // Holders alag request se aate hain ("Loading who holds this access profile…") — pehle unka intezaar.
+    // Holders arrive in a separate request ("Loading who holds this access profile…") — wait for them first.
     await expect(drawer.holder(holder.name).getByTestId('holder-line')).toHaveText('Person · Permanent');
     await agent.assert('the People tab of the access profile {name} lists {person} under Assigned directly as a permanent holder', { params: { name: unique(name), person: unique(holder.name) } });
   });
 
-  test('a team’s profile shows read-only on a member’s profile', { tags: ['SIT-IAM-02', 'BEH-IAM-19', 'P1'], skip: !IAM_TEAM && 'IAM_TEAM / IAM_TEAM_MEMBER_EMAIL set nahi hai' }, async ({ agent, screen, users, teamProfile }) => {
+  test('a team’s profile shows read-only on a member’s profile', { tags: ['SIT-IAM-02', 'BEH-IAM-19', 'P1'], skip: !IAM_TEAM && 'IAM_TEAM / IAM_TEAM_MEMBER_EMAIL is not set' }, async ({ agent, screen, users, teamProfile }) => {
     const team = IAM_TEAM!;
     await users.open();
 
@@ -81,13 +81,13 @@ describe('IAM access profiles', { session: IAM_SESSION, agentContext: IAM_CONTEX
       params: { email: unique(holder.email), date: unique(tomorrow) },
     });
 
-    // Holders alag request se aate hain — pehle code unka intezaar kare, phir agent screen dekhe.
+    // Holders arrive in a separate request — code waits for them first, then the agent looks at the screen.
     await expect(drawer.holder(holder.name).getByTestId('holder-status')).toHaveText('Expiring');
-    // Row tareekh nahi, "Ends in N days" dikhata hai — isliye agent sirf woh kahe jo screen pe hai.
+    // The row shows "Ends in N days", not a date — so the agent asserts only what is on screen.
     await agent.assert('{person} is listed under Assigned directly and is marked Expiring', { params: { person: unique(holder.name) } });
   });
 
-  test('extending one holder leaves the other holder’s end date alone', knownBug('23 Nov 2026: do holders wale profile pe Change expiry ka Save "revision is invalid (required)" deta hai', 'SIT-IAM-08', 'BEH-IAM-19', 'P1'), async ({ agent, profiles }) => {
+  test('extending one holder leaves the other holder’s end date alone', knownBug('23 Nov 2026: on a profile with two holders, Save in Change expiry returns "revision is invalid (required)"', 'SIT-IAM-08', 'BEH-IAM-19', 'P1'), async ({ agent, profiles }) => {
     const [extended, other] = [poolUser('shared'), poolUser('sa-owner')];
     const inAYear = new Date();
     inAYear.setFullYear(inAYear.getFullYear() + 1);
@@ -116,7 +116,7 @@ describe('IAM access profiles', { session: IAM_SESSION, agentContext: IAM_CONTEX
     const impact = screen.getByTestId('profile-impact');
     await expect(impact).toContainText(/changes access for 1 person/i);
     await agent.assert('a confirmation dialog asks whether to save the changes to this profile and says the change affects access for 1 person');
-    await impact.getByTestId('confirm-cancel').tap(); // kuch save nahi
+    await impact.getByTestId('confirm-cancel').tap(); // nothing is saved
   });
 
   test('replacing a profile with a new one keeps the old one until the new one is created', { tags: ['BEH-IAM-20', 'SIT-IAM-11', 'P1'] }, async ({ agent, profiles }) => {
@@ -155,14 +155,14 @@ describe('IAM access profiles', { session: IAM_SESSION, agentContext: IAM_CONTEX
     await agent.act('open the delete dialog of {name} from its row actions menu and stop there; do not type anything and do not delete', { params: { name: unique(name) } });
 
     const d = screen.getByTestId('delete-profile');
-    // Dialog pehle "Loading" dikhata hai — impact aane ka intezaar.
+    // The dialog shows "Loading" first — wait for the impact.
     await expect(d.getByTestId('delete-impact')).toContainText('Held by 1 person', { timeout: 30_000 });
     for (const outcome of ['replace_existing', 'replace_new', 'remove']) await expect(d.getByTestId(`outcome-${outcome}`)).toBeAttached();
     await agent.assert('the delete dialog says the profile is held by 1 person, explains what happens to holders, and asks whether to replace it with an existing profile, replace it with a new one, or remove it without replacement');
   });
 
   // Points to note: "Deleting an access profile nobody holds needs no dialog."
-  test('a profile nobody holds is deleted without a dialog', knownBug('23 Nov 2026: unheld profile pe bhi confirm dialog aata hai ("No one holds it, so no one loses access.")', 'P2'), async ({ agent, screen, profiles }) => {
+  test('a profile nobody holds is deleted without a dialog', knownBug('23 Nov 2026: an unheld profile also gets a confirm dialog ("No one holds it, so no one loses access.")', 'P2'), async ({ agent, screen, profiles }) => {
     const name = data.name('unused');
     await profiles.open();
     const drawer = await profiles.create(name);

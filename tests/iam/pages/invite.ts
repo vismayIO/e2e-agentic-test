@@ -3,8 +3,8 @@ import { expect } from 'e2e';
 import type { Ctx } from '../../app/ui.ts';
 
 /**
- * Users page ke "Invite users" drawer: email invite aur CSV import, aur "Invitations & imports".
- * Drawer ka test id step ke saath badalta hai (invite-drawer → invite-email / import-csv).
+ * The "Invite users" drawer of the Users page: email invite and CSV import, and "Invitations & imports".
+ * The drawer's test id changes with the step (invite-drawer → invite-email / import-csv).
  */
 export class InviteDrawer {
   readonly form: Locator;
@@ -12,7 +12,7 @@ export class InviteDrawer {
   readonly domainWarning: Locator;
   readonly allowOutside: Locator;
   readonly send: Locator;
-  /** Send ke baad ka nateeja ("1 invited · 7 refused: … (the email address is already in use)"). */
+  /** The result after Send ("1 invited · 7 refused: … (the email address is already in use)"). */
   readonly banner: Locator;
   readonly importer: Locator;
   readonly importBanner: (file: string) => Locator;
@@ -23,7 +23,7 @@ export class InviteDrawer {
     this.fx = fx;
     const { screen } = fx;
     this.form = screen.getByTestId('invite-email');
-    this.emails = this.form.getByTestId('invite-emails'); // plain text input, comma se alag addresses (chips nahi)
+    this.emails = this.form.getByTestId('invite-emails'); // plain text input, comma-separated addresses (no chips)
     this.domainWarning = this.form.getByTestId('domain-mismatch');
     this.allowOutside = this.form.getByTestId('allow-outside');
     this.send = this.form.getByTestId('send-invite');
@@ -43,8 +43,8 @@ export class InviteDrawer {
   }
 
   /**
-   * Addresses likho aur "allow outside" tick karo. Test addresses Mailosaur ke hain, jo tenant ke allowed
-   * domains ke bahar hai — warning thodi der se aati hai (allowed-domain list server se), uska intezaar.
+   * Type the addresses and tick "allow outside". Test addresses are Mailosaur's, which is outside the tenant's
+   * allowed domains — the warning comes a little late (the allowed-domain list is from the server), so wait for it.
    */
   async enter(addresses: string[]): Promise<void> {
     await this.emails.fill(addresses.join(', '));
@@ -53,8 +53,8 @@ export class InviteDrawer {
   }
 
   /**
-   * Send ek baar, aur server ke jawab tak ruko. Sab bhej diye to drawer band hota hai; koi address refuse
-   * hua (jaise "already in use") to drawer khula rehta hai aur `banner` me "<n> invited · <m> refused: …".
+   * Send once, and wait for the server's response. If all were sent the drawer closes; if an address was
+   * refused (such as "already in use") the drawer stays open and `banner` shows "<n> invited · <m> refused: …".
    */
   async submit(): Promise<void> {
     await expect(this.send).toBeEnabled();
@@ -63,13 +63,13 @@ export class InviteDrawer {
       this.send.tap(),
     ]);
     expect(response.status, 'POST /v1/platform/invitation').toBeLessThan(300);
-    // Ya banner aaye ya drawer band ho. (Drawer ke peeche ka header button bhi "visible" ginta hai, isliye woh signal nahi.)
+    // Either the banner shows or the drawer closes. (The header button behind the drawer also counts as "visible", so it is no signal.)
     await expect
       .poll(async () => (await this.banner.isVisible()) || !(await this.form.isVisible()), { timeout: 15_000, message: 'invite drawer neither closed nor showed a result' })
       .toBe(true);
   }
 
-  /** Invite bhejo; koi bhi address refuse ho to banner ke text ke saath fail. */
+  /** Send the invite; if any address is refused, fail with the banner's text. */
   async invite(addresses: string[]): Promise<void> {
     await this.openEmailForm();
     await this.enter(addresses);
@@ -94,13 +94,13 @@ export class InvitationsDrawer {
     this.root = fx.screen.getByTestId('invitations-drawer');
   }
 
-  /** Drawer kholo, Imports tab pe. */
+  /** Open the drawer, on the Imports tab. */
   async openImports(): Promise<void> {
     await this.fx.screen.getByTestId('invitations-imports', { visible: true }).tap();
     await this.root.getByTestId('tab-imports').tap();
   }
 
-  /** Naye se purana: ek hi file naam dobara ho to sabse naya pehle. */
+  /** Newest to oldest: when the same file name repeats, the newest comes first. */
   importRow(file: string): Locator {
     return this.root.getByTestId('import-rows').getByRole('listitem').filter({ hasText: file }).first();
   }

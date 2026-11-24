@@ -6,20 +6,20 @@ import { test } from './fixtures.ts';
 import { IAM_PREFIX, IAM_SESSION, POOL, POOL_FILE, iamNames, type PoolLabel, type PoolUser } from './iam.ts';
 
 /**
- * IAM ka setup, har run me ek baar, bina model call ke:
- *   1. admin login (app/auth.ts): saved login chale to wahi, warna ek OTP
- *   2. khatam ho chuke runs ka `iam-e2e-` data ek-ek karke saaf — 3 ghante se naya data kisi chal rahe run ka
- *      ho sakta hai, use sweep nahi chhedta (app/cleanup.ts). Ek-ek karke, kyunki bulk delete ka background job
- *      deployed backend pe chalta hi nahi (23 Nov 2026). Order: service accounts (owner users se pehle), access
- *      profiles (holders aur role references ke saath), roles, users.
- *   3. disposable users ka pool: ek invite → har ek ka pehla sign-in (Mailosaur OTP) → naam
- *   4. apna ek access profile 'sa-owner' aur 'shared' ko: service-account owner picker sirf direct access
- *      profile wale members dikhata hai (admin bhi nahi, 23 Nov 2026)
- *   5. session save — saare IAM tests yahi reuse karte hain
+ * IAM setup, once per run, with no model call:
+ *   1. admin login (app/auth.ts): the saved login if it works, otherwise one OTP
+ *   2. remove the `iam-e2e-` data of finished runs one by one — data younger than 3 hours may belong to a run
+ *      in progress, so sweep leaves it alone (app/cleanup.ts). One by one, because the bulk delete background
+ *      job does not run at all on the deployed backend (23 Nov 2026). Order: service accounts (before their
+ *      owner users), access profiles (with their holders and role references), roles, users.
+ *   3. the pool of disposable users: one invite → each one's first sign-in (Mailosaur OTP) → name
+ *   4. an access profile of its own for 'sa-owner' and 'shared': the service-account owner picker lists only
+ *      members with a direct access profile (not even the admin, 23 Nov 2026)
+ *   5. session save — every IAM test reuses it
  *
- * Naam is file ke scope me bante hain: retry pe file dobara import hoti hai, to retry naya pool banata hai.
- * Pichhle attempt ka adhoora pool tab hatta hai jab woh 3 ghante se purana ho chuka ho — usse pehle ka setup
- * use chal rahe run ka data maan ke chhod deta hai.
+ * Names are made in this file's scope: a retry imports the file again, so a retry makes a new pool.
+ * The half-made pool of the previous attempt is removed once it is older than 3 hours — a setup that runs
+ * before then treats it as the data of a run in progress and leaves it.
  */
 const { id, address, name } = iamNames();
 const pool = Object.fromEntries(
@@ -31,7 +31,7 @@ test.setup('sign in as the admin and prepare IAM test users', {
   timeout: 30 * 60_000,
 }, async ({ app, browser, screen, session, users, invite, roles, profiles, serviceAccounts }) => {
   const fx = { app, browser, screen };
-  console.log(`[iam setup] admin login: ${(await adminSignIn(fx)) === 'reused' ? 'saved login chala, OTP nahi' : 'naya OTP login'}`);
+  console.log(`[iam setup] admin login: ${(await adminSignIn(fx)) === 'reused' ? 'saved login reused, no OTP' : 'new OTP login'}`);
 
   await sweep('service accounts', serviceAccounts, () => serviceAccounts.open(), IAM_PREFIX, (key) => serviceAccounts.delete(key));
   await sweep('access profiles', profiles, () => profiles.open(), IAM_PREFIX, (key) => profiles.delete(key));
@@ -43,7 +43,7 @@ test.setup('sign in as the admin and prepare IAM test users', {
 
   await users.open();
   await invite.invite(POOL.map((l) => pool[l].email));
-  await rememberAdmin(fx); // abhi ke tokens file me — pool sign-ins ke baad admin isi se wapas
+  await rememberAdmin(fx); // the current tokens into the file — after the pool sign-ins the admin comes back from it
   for (const label of POOL) {
     await app.clearState();
     await signIn(fx, pool[label].email);

@@ -1,8 +1,8 @@
 /**
- * Slack / Microsoft Teams notification. Webhook set na ho to kuch nahi bhejta.
+ * Slack / Microsoft Teams notification. Sends nothing when no webhook is set.
  *   SLACK_WEBHOOK_URL  : Slack incoming webhook
  *   TEAMS_WEBHOOK_URL  : Teams "Workflows" (Power Automate) webhook — Adaptive Card
- *   NOTIFY_ON          : always (default) | problems  (sirf yellow/red pe)
+ *   NOTIFY_ON          : always (default) | problems  (only on yellow/red)
  */
 import type { NightlyRunMeta, Verdict } from './types.ts';
 import type { NightlySummary, RunView } from './e2e-report.ts';
@@ -13,7 +13,7 @@ const EMOJI: Record<Verdict, string> = { green: '✅', yellow: '⚠️', red: '�
 const LABEL: Record<Verdict, string> = { green: 'Healthy', yellow: 'Needs attention', red: 'Broken' };
 
 const runFact = (r: RunView, extra = ''): string =>
-  r.present ? `${passedOfTotal(r)} passed · ${r.failed} failed${extra}` : r.skipped ? `nahi chala — ${r.skipped}` : 'nahi chala';
+  r.present ? `${passedOfTotal(r)} passed · ${r.failed} failed${extra}` : r.skipped ? `did not run — ${r.skipped}` : 'did not run';
 
 function lines(meta: NightlyRunMeta, s: NightlySummary): { title: string; facts: [string, string][]; bullets: string[] } {
   const r = s.regression;
@@ -27,7 +27,7 @@ function lines(meta: NightlyRunMeta, s: NightlySummary): { title: string; facts:
     facts: [
       ['Smoke', runFact(s.smoke)],
       ['Tests', runFact(r, ` · ${r.flaky} flaky`)],
-      ['Known bugs', `${bugs.failing.length} ab bhi fail · ${bugs.fixed.length} fixed (knownBug mark hatao)`],
+      ['Known bugs', `${bugs.failing.length} still failing · ${bugs.fixed.length} fixed (remove the knownBug mark)`],
       ['Explore', `${s.issues} issues · ${s.warnings} warnings${meta.monkeySeed !== undefined ? ` · ${monkeyRerun(meta.monkeySeed)}` : ''}`],
       ['App', meta.appUrl],
     ],
@@ -60,13 +60,13 @@ export async function notify(meta: NightlyRunMeta, s: NightlySummary): Promise<v
       `*${title}*`,
       facts.map(([k, v]) => `*${k}:* ${v}`).join('\n'),
       bullets.map((b) => `• ${b}`).join('\n'),
-      link ? `<${link}|Report kholo>` : '',
+      link ? `<${link}|Open report>` : '',
     ].filter(Boolean).join('\n\n');
     try {
       await post(slack, { text });
-      console.log('notify: Slack bheja');
+      console.log('notify: sent to Slack');
     } catch (e) {
-      console.warn(`notify: Slack fail — ${(e as Error).message}`);
+      console.warn(`notify: Slack failed — ${(e as Error).message}`);
     }
   }
 
@@ -86,15 +86,15 @@ export async function notify(meta: NightlyRunMeta, s: NightlySummary): Promise<v
             { type: 'FactSet', facts: facts.map(([title, value]) => ({ title, value })) },
             { type: 'TextBlock', text: bullets.map((b) => `- ${b}`).join('\n'), wrap: true },
           ],
-          actions: link ? [{ type: 'Action.OpenUrl', title: 'Report kholo', url: link }] : [],
+          actions: link ? [{ type: 'Action.OpenUrl', title: 'Open report', url: link }] : [],
         },
       }],
     };
     try {
       await post(teams, card);
-      console.log('notify: Teams bheja');
+      console.log('notify: sent to Teams');
     } catch (e) {
-      console.warn(`notify: Teams fail — ${(e as Error).message}`);
+      console.warn(`notify: Teams failed — ${(e as Error).message}`);
     }
   }
 }

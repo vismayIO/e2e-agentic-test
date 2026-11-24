@@ -5,47 +5,47 @@ import { latestCode, mailosaurConfigured } from '../../lib/mailosaur.ts';
 import type { Ctx } from './ui.ts';
 
 /**
- * Motadata console ka login — har module ke setup ke liye ek hi.
+ * Login to the Motadata console — one for every module's setup.
  *
- * Sign-in email code se hota hai; code Mailosaur inbox se padha jaata hai (lib/mailosaur.ts), fixed OTP nahi.
- * App login ko httpOnly cookies me rakhta hai, aur e2e ka `session.save` cookies aur localStorage rakhta hai —
- * isliye setup ka save kiya session tests aur `e2e explore` dono me seedha signed-in khulta hai.
+ * Sign-in is by email code; the code is read from the Mailosaur inbox (lib/mailosaur.ts), not a fixed OTP.
+ * The app keeps the login in httpOnly cookies, and e2e's `session.save` keeps cookies and localStorage —
+ * so the session a setup saves opens signed in, in tests and in `e2e explore` alike.
  *
- * Session ek hi run tak jeeta hai, aur har run (aur har module ka setup) naya OTP na maange, isliye login
- * ki state `.auth/admin.json` me bhi likhi jaati hai: agla setup pehle wahi lagata hai, naya OTP sirf tab jab
- * woh expire ho chuka ho. `.auth/` gitignore me hai: isme tokens hain. Setups alag worker processes me ek
- * saath chalte hain, isliye file atomically likhi jaati hai aur OTP login ek lock ke andar hota hai
+ * A session lives for one run only, and each run (and each module's setup) should not ask for a new OTP, so
+ * the login state is also written to `.auth/admin.json`: the next setup applies that first, and a new OTP is
+ * needed only once it has expired. `.auth/` is gitignored: it holds tokens. Setups run at the same time in
+ * separate worker processes, so the file is written atomically and the OTP login happens inside a lock
  * (`adminSignIn`).
  */
 
-/** Admin ka display name, jaise app dikhata hai ("Invited by", "Disabled by", owner). */
+/** The admin's display name, as the app shows it ("Invited by", "Disabled by", owner). */
 export const ADMIN_NAME = env('APP_ADMIN_NAME') ?? 'Test User';
 
 /**
- * Halka signed-in session: sirf admin login, koi test data nahi (`admin.setup.e2e.ts` banata hai). Smoke tests
- * aur explore charters isi pe chalte hain — iska setup seconds me hota hai. Jis module ko apna data chahiye
- * woh apna session banata hai (jaise `iam`).
+ * The light signed-in session: the admin login only, no test data (made by `admin.setup.e2e.ts`). Smoke tests
+ * and explore charters run on it — its setup takes seconds. A module that needs data of its own
+ * makes its own session (such as `iam`).
  */
 export const ADMIN_SESSION = 'admin';
 
 /**
- * Console admin ka Mailosaur address (…@<server>.mailosaur.net), isi pe OTP aata hai. Login zaroori hai:
- * settings na hon to yahin saaf error — setup fail hota hai aur run non-zero pe khatam, chupchaap skip nahi.
- * Config load pe nahi, taaki `e2e list` aur `npm run verify` bina secrets ke chalein.
+ * The console admin's Mailosaur address (…@<server>.mailosaur.net); the OTP arrives here. Login is required:
+ * without the settings, a clear error right here — the setup fails and the run ends non-zero, no silent skip.
+ * Not at config load, so that `e2e list` and `npm run verify` run without secrets.
  */
 function adminEmail(): string {
   const email = env('APP_ADMIN_EMAIL');
   if (!email || !mailosaurConfigured()) {
-    throw new Error('admin login ke liye APP_ADMIN_EMAIL, MAILOSAUR_API_KEY aur MAILOSAUR_SERVER_ID set karo (.env.example dekho)');
+    throw new Error('set APP_ADMIN_EMAIL, MAILOSAUR_API_KEY and MAILOSAUR_SERVER_ID for the admin login (see .env.example)');
   }
   return email;
 }
 
 /**
- * Sign-in ki ek koshish: /login pe email daal ke code mangwao, Mailosaur se usi request ke baad aaya code
- * padho, type karo. Code ke 6 alag boxes hain (har box ek digit, phir agle pe focus), isliye pehle box me
- * key-by-key; chhatha digit likhte hi app khud verify karta hai.
- * Lautata hai app ka error message agar usne sign-in ki jagah alert dikhaya, warna `undefined` (signed in).
+ * One sign-in attempt: enter the email on /login and request a code, read the code that arrived in Mailosaur
+ * after that request, type it. The code has 6 separate boxes (one digit each, then focus moves on), so type
+ * key by key into the first box; the app verifies by itself once the sixth digit is typed.
+ * Returns the app's error message if it showed an alert instead of signing in, otherwise `undefined` (signed in).
  */
 async function signInOnce({ app, screen, browser }: Ctx, email: string): Promise<string | undefined> {
   const alert = screen.getByRole('alert').first();
@@ -60,17 +60,17 @@ async function signInOnce({ app, screen, browser }: Ctx, email: string): Promise
   await otp.pressSequentially(await latestCode(email, requestedAt));
   const left = async () => !/\/login/.test(await browser.url());
   await expect
-    .poll(async () => (await left()) || (await alert.isVisible()), { timeout: 60_000, message: `sign-in (${email}): code ke baad na app khula, na koi error aaya` })
+    .poll(async () => (await left()) || (await alert.isVisible()), { timeout: 60_000, message: `sign-in (${email}): after the code, neither the app opened nor an error appeared` })
     .toBe(true);
   return (await left()) ? undefined : ((await alert.textContent()) ?? '');
 }
 
 /**
- * Email code se sign in. Test environment ki sign-in service idle ke baad pehli ek-do requests pe fail hoti hai
- * (23–24 Nov 2026, har run ka pehla sign-in: "Request timed out.", ya "Your code was accepted, but the sign-in
- * service did not open a session. Request a new code and try again."), aur fail hua code dobara nahi chalta.
- * Isliye wahi jo app kehta hai: naya code maang ke dobara, zyada se zyada 3 koshish, har error log me.
- * Yeh setup ki provisioning hai; sign-in ke apne tests is helper se nahi guzarte.
+ * Sign in by email code. After being idle, the test environment's sign-in service fails its first one or two
+ * requests (23–24 Nov 2026, the first sign-in of every run: "Request timed out.", or "Your code was accepted,
+ * but the sign-in service did not open a session. Request a new code and try again."), and a failed code does
+ * not work again. So do what the app says: request a new code and retry, at most 3 attempts, every error logged.
+ * This is setup provisioning; the sign-in tests themselves do not go through this helper.
  */
 export async function signIn(fx: Ctx, email: string): Promise<void> {
   const errors: string[] = [];
@@ -78,12 +78,12 @@ export async function signIn(fx: Ctx, email: string): Promise<void> {
     const error = await signInOnce(fx, email);
     if (error === undefined) return;
     errors.push(error);
-    console.warn(`[login] ${email}: app ne sign-in nahi kiya ("${error}") — koshish ${errors.length}/3`);
+    console.warn(`[login] ${email}: the app did not sign in ("${error}") — attempt ${errors.length}/3`);
   }
-  throw new Error(`sign-in (${email}): 3 koshishon me nahi hua — ${errors.join(' | ')}`);
+  throw new Error(`sign-in (${email}): failed after 3 attempts — ${errors.join(' | ')}`);
 }
 
-/** Invitee ka pehla sign-in: /welcome pe naam (zaroori), baaki details skip. */
+/** An invitee's first sign-in: the name on /welcome (required), the other details skipped. */
 export async function completeWelcome({ screen, browser }: Pick<Ctx, 'browser' | 'screen'>, given: string, last: string): Promise<void> {
   await expect(browser).toHaveURL(/\/welcome/, { timeout: 30_000 });
   await screen.getByRole('textbox', /^Given name/).fill(given);
@@ -98,13 +98,13 @@ interface AuthState { cookies: Cookie[]; local: Record<string, string> }
 
 const ADMIN_AUTH = '.auth/admin.json';
 
-/** Abhi ke browser ka login: cookies + localStorage. */
+/** The current browser's login: cookies + localStorage. */
 async function captureAuth({ browser }: Pick<Ctx, 'browser'>): Promise<AuthState> {
   const local = (await browser.evaluate(() => Object.fromEntries(Object.entries(localStorage)))) as AuthState['local'];
   return { cookies: await browser.cookies(), local };
 }
 
-/** Saved login lagao: cookies, aur app ke origin pe localStorage — agla page load unhe padhta hai. */
+/** Apply a saved login: cookies, and localStorage on the app's origin — the next page load reads them. */
 async function restoreAuth({ app, browser }: Pick<Ctx, 'app' | 'browser'>, state: AuthState): Promise<void> {
   if (state.cookies.length) await browser.setCookies(state.cookies);
   await app.open('/login');
@@ -114,7 +114,7 @@ async function restoreAuth({ app, browser }: Pick<Ctx, 'app' | 'browser'>, state
   }, state.local);
 }
 
-/** Login chal raha hai? Signed-in console `main` dikhata hai, warna app sign-in page pe bhejta hai. */
+/** Does the login work? A signed-in console shows `main`; otherwise the app sends you to the sign-in page. */
 async function signedIn({ app, screen }: Ctx): Promise<boolean> {
   await app.open('/');
   const signInButton = screen.getByRole('button', 'Email me a sign-in code');
@@ -122,7 +122,7 @@ async function signedIn({ app, screen }: Ctx): Promise<boolean> {
   return !(await signInButton.isVisible());
 }
 
-/** Saved admin login is browser me lagao; `true` agar app use maan le. */
+/** Apply the saved admin login to this browser; `true` if the app accepts it. */
 async function reuseAdminLogin(fx: Ctx): Promise<boolean> {
   await fx.app.clearState();
   if (!existsSync(ADMIN_AUTH)) return false;
@@ -131,10 +131,10 @@ async function reuseAdminLogin(fx: Ctx): Promise<boolean> {
 }
 
 const ADMIN_LOCK = '.auth/admin.lock';
-/** Lock ka zinda holder itne me chhod deta hai: saved login dobara dekhna + ek OTP login, apne timeouts ke saath. */
+/** A live lock holder lets go within this: a second look at the saved login + one OTP login, with their timeouts. */
 const LOCK_WAIT_MS = 3 * 60_000;
 
-/** Lock file me likha holder ka pid; lock na ho (ya holder abhi pid likh raha ho) to `undefined`. */
+/** The holder's pid written in the lock file; `undefined` if there is no lock (or the holder is still writing its pid). */
 function lockHolder(): number | undefined {
   try {
     return Number(readFileSync(ADMIN_LOCK, 'utf8')) || undefined;
@@ -144,7 +144,7 @@ function lockHolder(): number | undefined {
   }
 }
 
-/** Process chal raha hai? Signal 0 kuch bhejta nahi, sirf poochta hai; ESRCH = aisa koi process nahi. */
+/** Is the process running? Signal 0 sends nothing, it only asks; ESRCH = no such process. */
 function alive(pid: number): boolean {
   try {
     process.kill(pid, 0);
@@ -155,8 +155,8 @@ function alive(pid: number): boolean {
 }
 
 /**
- * Lock file apne pid ke saath banao (`wx`: sirf tab jab na ho). Kisi aur ka ho to `false`; uska holder mar
- * chuka ho (crash / kill hua setup) to lock hatao — agla poll use le lega.
+ * Create the lock file with our pid (`wx`: only if it does not exist). `false` if someone else holds it; if
+ * its holder is dead (a crashed / killed setup), remove the lock — the next poll takes it.
  */
 function takeAdminLock(): boolean {
   try {
@@ -171,20 +171,20 @@ function takeAdminLock(): boolean {
 }
 
 /**
- * Admin login: saved login chal raha ho to wahi (koi OTP nahi), warna ek OTP login aur file taazi.
- * Setup ke aakhir me (doosre users ke sign-in ke baad) bhi yahi bulao — admin wapas aa jaata hai.
+ * Admin login: the saved login if it works (no OTP), otherwise one OTP login and a refreshed file.
+ * Call it at the end of a setup too (after other users have signed in) — the admin comes back.
  *
- * OTP wala rasta ek cross-process lock ke andar hai: saved login expire ho to ek saath chal rahe setups
- * (admin ka aur modules ke, alag worker processes) sab code maangte, aur har naya code pichhle ko bekaar kar
- * deta hai. Lock milne ke baad saved login dobara dekho — intezaar ke dauraan doosra process use taaza kar
- * chuka ho sakta hai.
+ * The OTP path is inside a cross-process lock: when the saved login has expired, setups running at the same
+ * time (the admin's and the modules', in separate worker processes) would all request a code, and each new
+ * code invalidates the previous one. After getting the lock, look at the saved login again — another process
+ * may have refreshed it during the wait.
  */
 export async function adminSignIn(fx: Ctx): Promise<'reused' | 'signed-in'> {
   const email = adminEmail();
   mkdirSync('.auth', { recursive: true });
   if (await reuseAdminLogin(fx)) return 'reused';
   await expect
-    .poll(takeAdminLock, { timeout: LOCK_WAIT_MS, interval: 1_000, message: `${ADMIN_LOCK} nahi mila: uska holder process abhi bhi admin OTP login me hai` })
+    .poll(takeAdminLock, { timeout: LOCK_WAIT_MS, interval: 1_000, message: `could not take ${ADMIN_LOCK}: its holder process is still in the admin OTP login` })
     .toBe(true);
   try {
     if (await reuseAdminLogin(fx)) return 'reused';
@@ -198,8 +198,8 @@ export async function adminSignIn(fx: Ctx): Promise<'reused' | 'signed-in'> {
 }
 
 /**
- * Tokens refresh hote rehte hain: setup ke aakhir me abhi ka admin login file me. Pehle temp file, phir
- * rename: doosre process ka setup kabhi aadhi likhi file na padhe.
+ * Tokens keep refreshing: at the end of a setup, write the current admin login to the file. Temp file first,
+ * then rename: another process's setup must never read a half-written file.
  */
 export async function rememberAdmin(fx: Pick<Ctx, 'browser'>): Promise<void> {
   const tmp = `${ADMIN_AUTH}.${process.pid}.tmp`;

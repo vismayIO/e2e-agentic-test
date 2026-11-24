@@ -1,12 +1,12 @@
 import { existsSync } from 'node:fs';
 
-// Local machine pe `.env` (CI me values pipeline se aati hain). Yahin, ek hi baar: scripts (parent process) aur
-// e2e.config.ts (e2e ka child process) dono yeh module import karte hain, to dono ko wahi values milti hain.
+// `.env` on a local machine (in CI the values come from the pipeline). Here, once: the scripts (parent process) and
+// e2e.config.ts (e2e's child process) both import this module, so both get the same values.
 if (existsSync('.env')) process.loadEnvFile('.env');
 
 /**
- * Env var padho; khaali value ya Azure DevOps ka unresolved macro
- * (literal "$(NAME)") ko "set nahi hai" maano.
+ * Read an env var; an empty value or an unresolved Azure DevOps macro
+ * (literal "$(NAME)") counts as "not set".
  */
 export function env(name: string): string | undefined {
   const v = process.env[name]?.trim();

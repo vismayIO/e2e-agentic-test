@@ -1,49 +1,49 @@
-# Motadata console ka AI QA — Azure DevOps. Har raat poori pipeline, aur haath se koi bhi suite (docs/testing.md).
+# AI QA for the Motadata console — Azure DevOps. The whole pipeline every night, and any suite by hand (docs/testing.md).
 #
-# Setup (ek baar):
-#   1. Pipelines → Library → variable group "nightly-qa" banao:
-#        APP_URL (zaroori), APP_NAME
+# Setup (once):
+#   1. Pipelines → Library → create the variable group "nightly-qa":
+#        APP_URL (required), APP_NAME
 #        Model : AZURE_API_KEY 🔒, AZURE_RESOURCE_NAME, AZURE_OPENAI_DEPLOYMENT
-#                (ya ANTHROPIC_API_KEY 🔒 / OPENAI_API_KEY 🔒)
-#        Login : APP_ADMIN_EMAIL, MAILOSAUR_SERVER_ID, MAILOSAUR_API_KEY 🔒 (teeno zaroori: console admin ka sign-in code —
-#                inke bina admin setup fail, run red)
+#                (or ANTHROPIC_API_KEY 🔒 / OPENAI_API_KEY 🔒)
+#        Login : APP_ADMIN_EMAIL, MAILOSAUR_SERVER_ID, MAILOSAUR_API_KEY 🔒 (all three required: the console admin's sign-in code —
+#                without them the admin setup fails, run red)
 #        Staging basic auth: BASIC_AUTH_USERNAME, BASIC_AUTH_PASSWORD 🔒   (optional)
 #        Notify: TEAMS_WEBHOOK_URL 🔒 / SLACK_WEBHOOK_URL 🔒               (optional)
-#   2. Pehle run pe variable group ko pipeline ke liye "Permit" karo.
-#   3. Project settings → Pipelines → Settings me "Limit job authorization scope" ON ho
-#      aur history download fail ho, to pipeline ke build service ko isi pipeline ka Read access do.
+#   2. On the first run, "Permit" the variable group for the pipeline.
+#   3. If "Limit job authorization scope" is ON in Project settings → Pipelines → Settings
+#      and the history download fails, give the pipeline's build service Read access to this pipeline.
 
 trigger: none
 pr: none
 
 schedules:
-  - cron: '17 20 * * *' # roz 20:17 UTC = 1:47 AM IST
+  - cron: '17 20 * * *' # daily 20:17 UTC = 1:47 AM IST
     displayName: Nightly QA
     branches:
       include: [main]
-    always: true # code na badle tab bhi chalao — app to roz deploy hota hai
+    always: true # run even when the code has not changed — the app is deployed every day
 
-# Schedule pe defaults chalte hain: suite nightly, sab modules.
+# A scheduled run uses the defaults: suite nightly, all modules.
 parameters:
   - name: suite
-    displayName: 'Kya chalana hai (nightly = poori pipeline)'
+    displayName: 'What to run (nightly = the whole pipeline)'
     type: string
     default: nightly
-    # lib/suites.ts ke RUNNABLE, `retest` ke bina: use pichhle run ka report.json
-    # usi machine pe chahiye (naye agent pe nahi hota) — CI me failed job dobara chalao.
+    # RUNNABLE from lib/suites.ts, without `retest`: it needs the previous run's report.json
+    # on the same machine (a new agent has none) — in CI, re-run the failed job.
     values: [nightly, smoke, sanity, regression, bugs, explore, monkey]
   - name: module
-    displayName: 'Module, jaise iam (khaali = sab). nightly hamesha sab modules chalata hai.'
+    displayName: 'Module, such as iam (empty = all). nightly always runs all modules.'
     type: string
     default: ' '
   - name: appUrl
-    displayName: 'Kisi aur URL pe chalana ho (khaali = variable group ka APP_URL)'
+    displayName: 'To run against another URL (empty = APP_URL from the variable group)'
     type: string
     default: ' '
 
 variables:
   - group: nightly-qa
-  # Azure khud CI=true set nahi karta — e2e ke CI defaults (read-only cache, test.only block) ke liye zaroori
+  # Azure does not set CI=true itself — needed for e2e's CI defaults (read-only cache, test.only blocked)
   - name: CI
     value: 'true'
   - name: E2E_TELEMETRY_DISABLED
@@ -59,8 +59,8 @@ pool:
 jobs:
   - job: qa
     displayName: QA — ${{ parameters.suite }}
-    # Nightly ki stages ki apni time limits hain (nightly.config.ts: smoke 10 + regression 45 + 6 charters × 8 = 103 min);
-    # job ka timeout unke jod + install se upar — CI job ko maare to report nahi banti.
+    # The nightly's stages have their own time limits (nightly.config.ts: smoke 10 + regression 45 + 6 charters × 8 = 103 min);
+    # the job timeout is above their sum + install — if CI kills the job, no report is written.
     timeoutInMinutes: 130
     steps:
       - checkout: self
@@ -82,9 +82,9 @@ jobs:
       - script: npm ci
         displayName: npm ci
 
-      # Typecheck + verify (tags, brief coverage, charters): app nahi khulta, model call nahi, koi secret nahi
-      # (sirf APP_URL aur MAILOSAUR_SERVER_ID, jo tests collect hote waqt padhe jaate hain).
-      # Galat tag ya charter yahin pakdo, raat ke run ke beech me nahi.
+      # Typecheck + verify (tags, brief coverage, charters): the app is not opened, no model call, no secret
+      # (only APP_URL and MAILOSAUR_SERVER_ID, which are read while tests are collected).
+      # Catch a wrong tag or charter here, not in the middle of the night's run.
       - script: npm test
         displayName: npm test
         env:
@@ -101,12 +101,12 @@ jobs:
         displayName: Install browsers
 
       - ${{ if eq(parameters.suite, 'nightly') }}:
-          # History sirf nightly runs me hoti hai. Tag se agli raat "pichhla nightly run" milta hai,
-          # beech me haath se chalaya smoke/sanity run nahi.
+          # Only nightly runs have history. The tag lets the next night find "the previous nightly run",
+          # not a smoke/sanity run started by hand in between.
           - script: echo "##vso[build.addbuildtag]nightly"
             displayName: Tag run as nightly
 
-          # Trend ke liye pichhle nightly run ka history.json (pehli raat nahi milega — theek hai)
+          # history.json of the previous nightly run, for the trend (not found on the first night — that is fine)
           - task: DownloadPipelineArtifact@2
             displayName: Restore history
             continueOnError: true
@@ -121,8 +121,8 @@ jobs:
               artifact: nightly-history
               path: $(Build.SourcesDirectory)/.nightly-history
 
-      # SUITE / MODULE env se aate hain (parameter seedha script me nahi). MODULE bina quotes ke:
-      # khaali = sab modules, "iam tickets" = do.
+      # SUITE / MODULE come from env (parameters are not put straight into the script). MODULE unquoted:
+      # empty = all modules, "iam tickets" = two.
       - script: |
           if [ "$SUITE" = nightly ]; then
             node scripts/nightly.ts
@@ -133,8 +133,8 @@ jobs:
         env:
           SUITE: ${{ parameters.suite }}
           MODULE: ${{ parameters.module }}
-          # Secret variables env me apne aap nahi aate — yahan map karna padta hai.
-          # Jo variable group me nahi hai woh literal "$(NAME)" rahega; config use ignore karta hai.
+          # Secret variables do not reach env by themselves — they have to be mapped here.
+          # One that is not in the variable group stays the literal "$(NAME)"; the config ignores it.
           APP_URL: ${{ coalesce(trim(parameters.appUrl), '$(APP_URL)') }}
           APP_NAME: $(APP_NAME)
           AZURE_API_KEY: $(AZURE_API_KEY)
@@ -145,7 +145,7 @@ jobs:
           APP_ADMIN_EMAIL: $(APP_ADMIN_EMAIL)
           APP_ADMIN_NAME: $(APP_ADMIN_NAME)
           MAILOSAUR_API_KEY: $(MAILOSAUR_API_KEY)
-          # Optional (README → IAM): na hon to sirf woh tests skip
+          # Optional (README → IAM): when not set only those tests are skipped
           IAM_SCIM_USER_EMAIL: $(IAM_SCIM_USER_EMAIL)
           IAM_TEAM: $(IAM_TEAM)
           IAM_TEAM_MEMBER_EMAIL: $(IAM_TEAM_MEMBER_EMAIL)
@@ -154,9 +154,9 @@ jobs:
           BASIC_AUTH_PASSWORD: $(BASIC_AUTH_PASSWORD)
           TEAMS_WEBHOOK_URL: $(TEAMS_WEBHOOK_URL)
           SLACK_WEBHOOK_URL: $(SLACK_WEBHOOK_URL)
-          NOTIFY_ON: always # ya: problems
+          NOTIFY_ON: always # or: problems
 
-      # Tests tab me pass/fail: is run ne jo bhi junit.xml likha (nightly me smoke aur regression, dono)
+      # Pass/fail in the Tests tab: every junit.xml this run wrote (in the nightly, both smoke and regression)
       - task: PublishTestResults@2
         displayName: Publish test results
         condition: succeededOrFailed()
@@ -167,7 +167,7 @@ jobs:
           failTaskOnMissingResultsFile: false
 
       - ${{ if eq(parameters.suite, 'nightly') }}:
-          # always(): run red ho to bhi report upload ho
+          # always(): upload the report even when the run is red
           - task: PublishPipelineArtifact@1
             displayName: Upload history
             condition: always()
@@ -175,7 +175,7 @@ jobs:
               targetPath: .nightly-history
               artifact: nightly-history
 
-          # Artifacts → nightly-report download karo → index.html kholo
+          # Artifacts → download nightly-report → open index.html
           - task: PublishPipelineArtifact@1
             displayName: Upload report
             condition: always()
@@ -184,8 +184,8 @@ jobs:
               artifact: nightly-report
 
       - ${{ else }}:
-          # Baaki suites: e2e ka apna output (report.json, junit.xml, report.html, results/ me traces + screenshots).
-          # sessions/ (saved logins) kabhi upload nahi; cache/ repo me commit hai.
+          # Other suites: e2e's own output (report.json, junit.xml, report.html, traces + screenshots in results/).
+          # sessions/ (saved logins) is never uploaded; cache/ is committed in the repo.
           - task: CopyFiles@2
             displayName: Collect e2e output
             condition: succeededOrFailed()

@@ -1,10 +1,10 @@
-# Motadata console ka AI QA — har raat poori pipeline, aur haath se koi bhi suite (docs/testing.md).
+# AI QA for the Motadata console — the whole pipeline every night, and any suite by hand (docs/testing.md).
 #
 # Settings → Secrets and variables → Actions:
-#   Variables : APP_URL, APP_ADMIN_EMAIL, MAILOSAUR_SERVER_ID (teeno zaroori), APP_NAME, AZURE_OPENAI_DEPLOYMENT
-#   Secrets   : model key (AZURE_API_KEY + AZURE_RESOURCE_NAME, ya ANTHROPIC_API_KEY / OPENAI_API_KEY / AI_GATEWAY_API_KEY)
-#               MAILOSAUR_API_KEY                             (console admin ka sign-in code — iske bina admin setup fail, run red)
-#               BASIC_AUTH_USERNAME / BASIC_AUTH_PASSWORD     (staging basic auth ho to, optional)
+#   Variables : APP_URL, APP_ADMIN_EMAIL, MAILOSAUR_SERVER_ID (all three required), APP_NAME, AZURE_OPENAI_DEPLOYMENT
+#   Secrets   : model key (AZURE_API_KEY + AZURE_RESOURCE_NAME, or ANTHROPIC_API_KEY / OPENAI_API_KEY / AI_GATEWAY_API_KEY)
+#               MAILOSAUR_API_KEY                             (the console admin's sign-in code — without it the admin setup fails, run red)
+#               BASIC_AUTH_USERNAME / BASIC_AUTH_PASSWORD     (for staging basic auth, optional)
 #               SLACK_WEBHOOK_URL / TEAMS_WEBHOOK_URL         (notification, optional)
 
 name: nightly-qa
@@ -12,27 +12,27 @@ run-name: ${{ inputs.suite || 'nightly' }} ${{ inputs.module }}
 
 on:
   schedule:
-    - cron: '17 20 * * *' # roz 20:17 UTC = 1:47 AM IST
+    - cron: '17 20 * * *' # daily 20:17 UTC = 1:47 AM IST
   workflow_dispatch:
     inputs:
       suite:
-        description: 'Kya chalana hai (nightly = poori pipeline)'
+        description: 'What to run (nightly = the whole pipeline)'
         type: choice
-        # lib/suites.ts ke RUNNABLE, `retest` ke bina: use pichhle run ka report.json
-        # usi machine pe chahiye (naye runner pe nahi hota) — CI me failed job dobara chalao.
+        # RUNNABLE from lib/suites.ts, without `retest`: it needs the previous run's report.json
+        # on the same machine (a new runner has none) — in CI, re-run the failed job.
         options: [nightly, smoke, sanity, regression, bugs, explore, monkey]
         default: nightly
       module:
-        description: 'Module, jaise iam (khaali = sab). nightly hamesha sab modules chalata hai.'
+        description: 'Module, such as iam (empty = all). nightly always runs all modules.'
         required: false
       app_url:
-        description: 'Kisi aur URL pe chalana ho (khaali = vars.APP_URL)'
+        description: 'To run against another URL (empty = vars.APP_URL)'
         required: false
 
 permissions:
   contents: read
 
-# Ek shared tenant aur ek hi admin login: CI ke runs ek ke baad ek (tenant pe load kam; do sign-in codes na takraayein).
+# One shared tenant and a single admin login: CI runs go one after another (less load on the tenant; two sign-in codes do not collide).
 concurrency:
   group: nightly-qa
   cancel-in-progress: false
@@ -40,15 +40,15 @@ concurrency:
 jobs:
   qa:
     runs-on: ubuntu-latest
-    # Nightly ki stages ki apni time limits hain (nightly.config.ts: smoke 10 + regression 45 + 6 charters × 8 = 103 min);
-    # job ka timeout unke jod + install se upar — CI job ko maare to report nahi banti.
+    # The nightly's stages have their own time limits (nightly.config.ts: smoke 10 + regression 45 + 6 charters × 8 = 103 min);
+    # the job timeout is above their sum + install — if CI kills the job, no report is written.
     timeout-minutes: 130
     env:
       E2E_TELEMETRY_DISABLED: '1'
       APP_URL: ${{ inputs.app_url || vars.APP_URL }}
       APP_NAME: ${{ vars.APP_NAME }}
-      MAILOSAUR_SERVER_ID: ${{ vars.MAILOSAUR_SERVER_ID }} # test addresses isi inbox ke: `npm test` ko bhi chahiye
-      SUITE: ${{ inputs.suite || 'nightly' }} # schedule pe inputs nahi hote
+      MAILOSAUR_SERVER_ID: ${{ vars.MAILOSAUR_SERVER_ID }} # test addresses are in this inbox: `npm test` needs it too
+      SUITE: ${{ inputs.suite || 'nightly' }} # a scheduled run has no inputs
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -59,9 +59,9 @@ jobs:
 
       - run: npm ci
 
-      # Typecheck + verify (tags, brief coverage, charters): app nahi khulta, model call nahi, koi secret nahi
-      # (sirf APP_URL aur MAILOSAUR_SERVER_ID variables, jo tests collect hote waqt padhe jaate hain).
-      # Galat tag ya charter yahin pakdo, raat ke run ke beech me nahi.
+      # Typecheck + verify (tags, brief coverage, charters): the app is not opened, no model call, no secret
+      # (only the APP_URL and MAILOSAUR_SERVER_ID variables, which are read while tests are collected).
+      # Catch a wrong tag or charter here, not in the middle of the night's run.
       - run: npm test
 
       - name: Cache Playwright browsers
@@ -73,7 +73,7 @@ jobs:
       - name: Install browsers
         run: npx e2e-web install chromium --with-deps
 
-      # Pichhli raaton ka history.json → report me trend
+      # history.json of the previous nights → the trend in the report
       - name: Restore history
         if: ${{ env.SUITE == 'nightly' }}
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -82,7 +82,7 @@ jobs:
           key: nightly-history-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: nightly-history-
 
-      # MODULE env se aata hai (input seedha script me nahi), aur bina quotes ke: khaali = sab modules, "iam tickets" = do.
+      # MODULE comes from env (the input is not put straight into the script), and unquoted: empty = all modules, "iam tickets" = two.
       - name: Run ${{ env.SUITE }}
         run: |
           if [ "$SUITE" = nightly ]; then
@@ -92,18 +92,18 @@ jobs:
           fi
         env:
           MODULE: ${{ inputs.module }}
-          # --- Model (jo use karte ho bas wahi) ---
+          # --- Model (only the one you use) ---
           AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
           AZURE_RESOURCE_NAME: ${{ secrets.AZURE_RESOURCE_NAME }}
           AZURE_OPENAI_DEPLOYMENT: ${{ vars.AZURE_OPENAI_DEPLOYMENT }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
-          # --- Console admin login (sign-in code Mailosaur se) / staging protection ---
+          # --- Console admin login (sign-in code from Mailosaur) / staging protection ---
           APP_ADMIN_EMAIL: ${{ vars.APP_ADMIN_EMAIL }}
           APP_ADMIN_NAME: ${{ vars.APP_ADMIN_NAME }}
           MAILOSAUR_API_KEY: ${{ secrets.MAILOSAUR_API_KEY }}
-          # --- Optional (README → IAM): na hon to sirf woh tests skip ---
+          # --- Optional (README → IAM): when not set only those tests are skipped ---
           IAM_SCIM_USER_EMAIL: ${{ vars.IAM_SCIM_USER_EMAIL }}
           IAM_TEAM: ${{ vars.IAM_TEAM }}
           IAM_TEAM_MEMBER_EMAIL: ${{ vars.IAM_TEAM_MEMBER_EMAIL }}
@@ -112,9 +112,9 @@ jobs:
           # --- Notification (nightly; optional) ---
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
-          NOTIFY_ON: always # ya: problems
+          NOTIFY_ON: always # or: problems
 
-      # always(): run red ho to bhi report upload ho
+      # always(): upload the report even when the run is red
       - name: Save history
         if: ${{ always() && env.SUITE == 'nightly' }}
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -122,7 +122,7 @@ jobs:
           path: .nightly-history
           key: nightly-history-${{ github.run_id }}-${{ github.run_attempt }}
 
-      # Download karke index.html kholo (raw/ folder saath me rehna chahiye)
+      # Download it and open index.html (the raw/ folder must stay next to it)
       - name: Upload report
         if: ${{ always() && env.SUITE == 'nightly' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -132,8 +132,8 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
-      # Baaki suites: e2e ka apna output (report.json, junit.xml, report.html, results/ me traces + screenshots).
-      # sessions/ (saved logins) kabhi upload nahi; cache/ repo me commit hai.
+      # Other suites: e2e's own output (report.json, junit.xml, report.html, traces + screenshots in results/).
+      # sessions/ (saved logins) is never uploaded; cache/ is committed in the repo.
       - name: Upload e2e output
         if: ${{ !cancelled() && env.SUITE != 'nightly' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -143,6 +143,6 @@ jobs:
             .e2e
             !.e2e/**/sessions/**
             !.e2e/cache/**
-          include-hidden-files: true # .e2e dot-folder hai
+          include-hidden-files: true # .e2e is a dot-folder
           if-no-files-found: warn
           retention-days: 7

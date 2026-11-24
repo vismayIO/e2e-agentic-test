@@ -8,11 +8,11 @@ const data = iamNames();
  * Sign-in page, signed out.
  * Brief: SIT-IAM-01 · BEH-IAM-01 · EX-IAM-01.1
  *
- * Email-code sign-in khud setup me hota hai (app/auth.ts, OTP Mailosaur se). "Known email" ek pool user hai,
- * admin nahi: admin ke liye naya code maangna setup ke chal rahe sign-in ka code bekaar kar sakta. Isliye yeh
- * describe IAM session pe hai (setup ke baad chale) aur har test pehle state saaf karta hai. Require SSO wale tests
- * (SIT-IAM-06, BEH-IAM-03) yahan nahi: shared tenant pe SSO required karne se sabka email sign-in band
- * ho jaata hai, agle run ka OTP login bhi.
+ * The email-code sign-in itself happens in setup (app/auth.ts, OTP from Mailosaur). The "known email" is a
+ * pool user, not the admin: asking for a new code for the admin could void the code of a setup sign-in in
+ * progress. So this describe is on the IAM session (it runs after setup) and each test clears state first.
+ * The Require SSO tests (SIT-IAM-06, BEH-IAM-03) are not here: requiring SSO on the shared tenant turns off
+ * email sign-in for everyone, the next run's OTP login included.
  */
 describe('IAM sign-in', { session: IAM_SESSION, agentContext: IAM_CONTEXT }, () => {
   test('a known and an unknown email see the same code screen', { tags: ['sanity', 'BEH-IAM-01', 'EX-IAM-01.1', 'P0'] }, async ({ app, agent, screen }) => {
@@ -25,7 +25,7 @@ describe('IAM sign-in', { session: IAM_SESSION, agentContext: IAM_CONTEXT }, () 
     await agent.assert('the screen asks for a 6-digit code sent to the address');
     await screen.getByRole('button', 'Use a different email').tap();
 
-    await requestCode(data.address('nobody')); // aisa address jiska koi account nahi
+    await requestCode(data.address('nobody')); // an address that has no account
 
     await expect(codeScreen).toBeVisible({ timeout: 45_000 });
     await expect(screen.getByRole('textbox', 'OTP digit 1 of 6')).toBeVisible();
@@ -36,7 +36,7 @@ describe('IAM sign-in', { session: IAM_SESSION, agentContext: IAM_CONTEXT }, () 
     await app.clearState();
     await app.open('/login');
 
-    // Sahi nateeja inkaar hai, isliye goal "code maango" nahi: likho, button ek baar dabao, jo dikhe wahin ruko.
+    // The correct result is a refusal, so the goal is not "ask for a code": type, press the button once, stop at what shows.
     await agent.act('type {email} in the work email field, press "Email me a sign-in code" once and stop at whatever the page shows next', { params: { email: 'not-an-email' } });
 
     await expect(screen.getByRole('textbox', 'Work email')).toBeVisible();

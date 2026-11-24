@@ -3,23 +3,23 @@ import { ADMIN_SESSION } from '../app/auth.ts';
 import { IAM_PREFIX } from './iam.ts';
 
 /**
- * IAM ke exploratory charters aur monkey ke create forms (docs/testing.md → "Exploratory, ad-hoc, monkey").
+ * IAM's exploratory charters and the create forms for monkey (docs/testing.md → "Exploratory, ad-hoc, monkey").
  * Brief: docs/iam/acceptance-brief.md.
  *
- * Har charter ek area + ek posture + ek sentence hai. lib/charters.ts har goal ke aakhir me shared tenant ka
- * niyam jodta hai (jo save ho uska naam `iam-e2e-x-<id>-` se shuru; jo tumne nahi banaya use sirf padhne ke liye kholo),
- * aur yahan ka har charter usi niyam ke andar likha hai:
- *   - explorer / fuzzer sirf apni banayi cheezon pe kaam karte hain, aur har save hone wale naam ka shuru `X` hai;
- *   - skeptic kuch nahi badalta — sirf padhta aur milata hai;
- *   - fuzzer ka matrix prefix ke BAAD ka text hai; jo input prefix nahi le sakta (khaali, 1 character, maujooda
- *     naam) woh sirf likh ke validation padhne ke liye hai, save ke liye nahi.
- * Service account ka owner sirf test user ("E2E …") ho — asli insaan kisi test account ka zimmedaar na bane.
+ * Each charter is one area + one posture + one sentence. lib/charters.ts appends the shared tenant's rule to
+ * every goal (anything saved has a name starting with `iam-e2e-x-<id>-`; open what you did not create only to read it),
+ * and every charter here is written inside that rule:
+ *   - explorer / fuzzer work only on things they created, and every saved name starts with `X`;
+ *   - skeptic changes nothing — it only reads and compares;
+ *   - the fuzzer's matrix is the text AFTER the prefix; an input that cannot take the prefix (empty, 1 character,
+ *     an existing name) is only typed to read the validation, never saved.
+ * A service account's owner must be a test user ("E2E …") only — no real person becomes responsible for a test account.
  */
 
-/** Is run ke explorer naam (`iam-e2e-x-<id>-…`) — wahi jo lib/charters.ts ka niyam har goal me likhta hai. */
+/** This run's explorer names (`iam-e2e-x-<id>-…`) — the same ones the lib/charters.ts rule writes into every goal. */
 const run = explorerNames(IAM_PREFIX);
 const X = run.name('');
-/** Hamare Mailosaur inbox ka address — kisi asli insaan ko mail nahi jaata. */
+/** An address in our Mailosaur inbox — no mail goes to a real person. */
 const invitee = run.address('invitee');
 
 export default {

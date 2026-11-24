@@ -4,18 +4,18 @@ import { SA_ROLE } from './pages/service-accounts.ts';
 import { IAM_CONTEXT, IAM_SESSION, iamNames, poolUser } from './iam.ts';
 
 const data = iamNames();
-/** Pool user jise setup ne access profile diya — owner picker sirf direct profile wale members dikhata hai. */
+/** The pool user the setup gave an access profile — the owner picker lists only members with a direct profile. */
 const owner = () => poolUser('sa-owner').name;
 
 /**
  * Service accounts (MSP view, organization "motadata"): credentials, owner, switch off/on, delete.
  * Brief: SIT-IAM-09, SIT-IAM-16 · BEH-IAM-12, 14, 23
  *
- * Precondition (account, pehle se bane credentials) page objects se; jaancha jaane wala kaam agent karta hai,
- * aur nateeja code + agent.assert dono jaanchte hain — code pehle, kyunki woh load hone ka intezaar karta hai
- * aur agent.assert screen ko ek hi baar dekhta hai. Har test apna account `iam-e2e-<id>-…` banata hai
- * (role SA_ROLE, owner pool ka 'sa-owner'); baad ka IAM setup unhe hatata hai. Owner guard (owner disable nahi
- * ho sakta) users-lifecycle.e2e.ts me hai. Generated secrets kabhi log ya assert message me nahi jaate.
+ * Preconditions (account, existing credentials) come from page objects; the agent does the work under test,
+ * and both code and agent.assert check the result — code first, because it waits for loading while
+ * agent.assert looks at the screen only once. Each test creates its own account `iam-e2e-<id>-…`
+ * (role SA_ROLE, owner the pool's 'sa-owner'); a later IAM setup removes them. The owner guard (an owner
+ * cannot be disabled) is in users-lifecycle.e2e.ts. Generated secrets never go into a log or an assert message.
  */
 const SA_CONTEXT = `${IAM_CONTEXT} A service account drawer lists its credentials; "Add credential" creates an OAuth client or an API key.`;
 
@@ -52,7 +52,7 @@ describe('IAM service accounts', { session: IAM_SESSION, agentContext: SA_CONTEX
       await agent.assert('{key} is listed as Active with an expiry, and nowhere on the screen is its secret value shown or offered to be shown again', { params: { key: unique(key) } });
     });
 
-    // Deployed app: API key hamesha generate hone ke 90 din baad expire hoti hai (custom date nahi).
+    // Deployed app: an API key always expires 90 days after it is generated (no custom date).
     test('a new API key always expires within 365 days', async ({ agent, screen, serviceAccounts }) => {
       const name = data.name('max-365');
       await serviceAccounts.open();
@@ -78,7 +78,7 @@ describe('IAM service accounts', { session: IAM_SESSION, agentContext: SA_CONTEX
 
       await agent.act('add a new API key credential named {new} to this service account, generate it and close its result with Done', { params: { new: unique(newKey) } });
 
-      // Rotation ka beech: naya key ban chuka, purana abhi bhi chal raha.
+      // Mid-rotation: the new key exists, the old one still works.
       await expect(drawer.credential(newKey).getByTestId('credential-status')).toHaveText('Active');
       await expect(drawer.credential(oldKey).getByTestId('credential-status')).toHaveText('Active');
 
@@ -119,13 +119,13 @@ describe('IAM service accounts', { session: IAM_SESSION, agentContext: SA_CONTEX
       await serviceAccounts.open();
       await serviceAccounts.search(name);
       await expect(serviceAccounts.status(name)).toHaveText('Active');
-      await expect(serviceAccounts.owner(name)).toContainText(owner(), { timeout: 15_000 }); // owner cell der se bharta hai
+      await expect(serviceAccounts.owner(name)).toContainText(owner(), { timeout: 15_000 }); // the owner cell fills in late
       await agent.assert('the service accounts list shows {name} as Active, owned by {owner}', { params: { name: unique(name), owner: unique(owner()) } });
     });
 
     test('a service account can be reassigned to another member', { tags: ['SIT-IAM-09', 'SIT-IAM-16', 'BEH-IAM-14'] }, async ({ agent, serviceAccounts }) => {
       const name = data.name('reassign');
-      const newOwner = poolUser('shared').name; // setup ne ise bhi owner banne layak profile diya
+      const newOwner = poolUser('shared').name; // the setup gave this user a profile too, so they can be an owner
       await serviceAccounts.open();
       await serviceAccounts.create(name, { owner: owner() });
 

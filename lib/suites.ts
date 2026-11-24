@@ -1,17 +1,17 @@
 import { modulePaths } from './modules.ts';
 
 /**
- * Test suites — ek hi jagah. Suite = tags se chuna hua tests ka hissa; module = `tests/<module>` path.
- * `scripts/suite.ts` (haath se / CI se) aur `scripts/nightly.ts` (raat ki pipeline) dono yahi padhte hain,
- * aur `scripts/verify.ts` jaanchta hai ki package.json ke shortcuts isi list se milte hain.
+ * Test suites — in one place. Suite = a part of the tests chosen by tags; module = the `tests/<module>` path.
+ * `scripts/suite.ts` (by hand / from CI) and `scripts/nightly.ts` (the nightly pipeline) both read this,
+ * and `scripts/verify.ts` checks that the package.json shortcuts match this list.
  * Strategy: docs/testing.md.
  *
- * Tags sirf yeh hain (scripts/verify.ts jaanchta hai):
- *   suite    smoke | sanity          — test kis chhote suite me bhi hai (regression me sab hain)
- *   state    bug                     — known defect; hamesha `knownBug()` se (neeche), haath se nahi
- *   priority P0 | P1 | P2            — har test pe theek ek
- *   brief id SIT-IAM-01, BEH-IAM-12… — docs/<module>/acceptance-brief.md se traceability
- * Module ya screen chunne ke liye tag nahi, path: `tests/iam`, `tests/iam/roles.e2e.ts`.
+ * These are the only tags (scripts/verify.ts checks):
+ *   suite    smoke | sanity          — which small suite the test is also in (regression has them all)
+ *   state    bug                     — known defect; always through `knownBug()` (below), never by hand
+ *   priority P0 | P1 | P2            — exactly one per test
+ *   brief id SIT-IAM-01, BEH-IAM-12… — traceability to docs/<module>/acceptance-brief.md
+ * To choose a module or a screen, use a path, not a tag: `tests/iam`, `tests/iam/roles.e2e.ts`.
  */
 export const SMOKE = 'smoke';
 export const SANITY = 'sanity';
@@ -19,33 +19,33 @@ export const BUG = 'bug';
 export const PRIORITIES = ['P0', 'P1', 'P2'] as const;
 
 /**
- * Known bug wale test ke options: `test('…', knownBug('23 Nov 2026: Next sirf naam se enabled', 'SIT-IAM-11', 'P2'), …)`.
- * e2e ka apna `fail` mark (reference/test → test.fail) + `bug` tag:
- *   - bug maujood hai → test fail hota hai → runner use "passed" ginta hai, wajah report me rehti hai, retry nahi;
- *   - bug fix ho gaya → test pass hota hai → runner `UNEXPECTED_PASS` se fail karta hai: mark hatao, test regression ban gaya.
- * `reason` me tareekh aur kya dikha likho. Serial group ke andar runner khud mana karta hai.
+ * Options for a known-bug test: `test('…', knownBug('23 Nov 2026: Next is enabled with only a name', 'SIT-IAM-11', 'P2'), …)`.
+ * e2e's own `fail` mark (reference/test → test.fail) + the `bug` tag:
+ *   - the bug is present → the test fails → the runner counts it as "passed", the reason stays in the report, no retry;
+ *   - the bug is fixed → the test passes → the runner fails it with `UNEXPECTED_PASS`: remove the mark, it is a regression test now.
+ * Put the date and what was seen in `reason`. Inside a serial group the runner itself refuses the mark.
  */
 export const knownBug = (reason: string, ...tags: string[]) => ({ fail: reason, tags: [BUG, ...tags] });
 
 export const SUITES = {
   smoke: {
-    about: 'Build zinda hai? Har module ke sabse zaroori pages, halke session pe, sirf dekhna. Deploy ke turant baad aur nightly ka pehla gate.',
+    about: 'Is the build alive? The most important pages of each module, on the light `admin` session, read-only. Right after a deploy, and the first gate of the nightly.',
     args: ['--tag', SMOKE],
   },
   sanity: {
-    about: 'Ek module ke mukhya kaam theek hain? Kisi fix ya chhote release ke baad us module pe.',
+    about: 'Do the main jobs of a module work? On that module, after a fix or a small release.',
     args: ['--tag', SANITY],
   },
   regression: {
-    about: 'Sab tests. Known bugs (knownBug) fail hone pe pass gine jaate hain; fix hote hi UNEXPECTED_PASS — mark hatao.',
+    about: 'Every test. Known bugs (knownBug) count as passed while they fail; once fixed, UNEXPECTED_PASS — remove the mark.',
     args: [],
   },
   bugs: {
-    about: 'Known defects ka retest: sirf `bug` tag wale tests. Sab pass = sab bugs ab bhi hain; UNEXPECTED_PASS = woh fix ho gaya.',
+    about: 'Retest of known defects: only the tests tagged `bug`. All pass = every bug is still there; UNEXPECTED_PASS = that one is fixed.',
     args: ['--tag', BUG, '--pass-with-no-tests'],
   },
   retest: {
-    about: 'Pichhle run (usi output folder ke) me jo pass nahi hue sirf woh dobara — fix confirm karne ke liye.',
+    about: 'Only what did not pass in the previous run (of the same output folder), again — to confirm a fix.',
     args: ['--last-failed', '--pass-with-no-tests'],
   },
 } as const satisfies Record<string, { about: string; args: readonly string[] }>;
@@ -54,16 +54,16 @@ export type SuiteName = keyof typeof SUITES;
 
 export const isSuite = (name: string): name is SuiteName => Object.hasOwn(SUITES, name);
 
-/** `e2e` ke arguments: `run <module paths> <suite flags>`. Module na do to sab modules. */
+/** Arguments for `e2e`: `run <module paths> <suite flags>`. With no module, all modules. */
 export function runArgs(suite: SuiteName, mods: readonly string[] = []): string[] {
   return ['run', ...modulePaths(mods), ...SUITES[suite].args];
 }
 
-/** Charters wale do rasta (lib/charters.ts): likhe hue charters aur random monkey. */
+/** The two charter-based ways (lib/charters.ts): written charters and random monkey. */
 export const EXPLORATIONS = {
-  explore: 'Exploratory: module ke likhe hue charters, persona ke saath (`e2e explore`).',
-  monkey: 'Monkey: module ke create forms me se random pe fuzzer persona. MONKEY_SEED se wahi forms dobara.',
+  explore: 'Exploratory: the written charters of a module, each with its persona (`e2e explore`).',
+  monkey: 'Monkey: the fuzzer persona on random create forms of a module. MONKEY_SEED repeats the same forms.',
 } as const;
 
-/** `scripts/suite.ts` jo naam leta hai — package.json me har ek ka shortcut hai. */
+/** The names `scripts/suite.ts` accepts — each has a shortcut in package.json. */
 export const RUNNABLE: readonly string[] = [...Object.keys(SUITES), ...Object.keys(EXPLORATIONS)];
