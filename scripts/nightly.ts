@@ -1,7 +1,8 @@
 /**
  * Nightly QA pipeline — docs/testing.md → "Nightly pipeline"
  *
- *   node scripts/nightly.ts    # smoke → regression (+ known bugs) → explore + monkey → report → notify
+ *   node scripts/nightly.ts               # smoke → regression (+ known bugs) → explore + monkey → report → notify
+ *   node scripts/nightly.ts -- --headed   # `--` ke baad ke flags har stage ke e2e ko jaate hain (scripts/suite.ts jaisa)
  *
  * Smoke fail to baaki stages nahi chalte (toota build model calls na khaaye).
  * Kaun se stages aur kitna: nightly.config.ts. Ek hi suite ya module: scripts/suite.ts. Repo root se chalao (npm run nightly).
@@ -63,9 +64,11 @@ async function runStages(): Promise<StageRuns> {
   let stopped: string | undefined;
   const record = (p: PhaseRun) => runs.phases.push(p);
   const skip = (p: Stage) => record({ ...p, exitCode: null, durationMs: 0, skipped: stopped });
+  /** `--` ke baad ke flags (jaise --headed) har stage ke e2e ko. */
+  const extra = process.argv.slice(2).filter((a) => a !== '--');
   /** Ek e2e process. Roka gaya stage (exit 130) adhoora hai: woh "nahi chala" darj hota hai aur agla shuru nahi hota. */
   const stage = async (p: Stage, argv: string[]): Promise<number | null> => {
-    const { code, ms } = await runE2E(argv);
+    const { code, ms } = await runE2E([...argv, ...extra]);
     if (code === INTERRUPTED) stopped = 'run beech me roka gaya (Ctrl-C / CI cancel)';
     record({ ...p, exitCode: code, durationMs: ms, skipped: code === INTERRUPTED ? stopped : undefined });
     return code;

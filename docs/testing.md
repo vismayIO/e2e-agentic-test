@@ -1,144 +1,145 @@
-# Testing strategy — kaun sa testing kab, kaise
+# Testing strategy — which kind of testing, when and how
 
-Yeh repo deployed Motadata console ko test karta hai, [`e2e`](https://e2e.com/docs) runner se. Tests **agent-driven** hain: jo kaam jaancha ja raha hai woh agent karta hai (`agent.act`), aur nateeja do baar jaancha jaata hai (code `expect`, phir `agent.assert`). Is page pe har testing type ka ek hi jawab hai: *kaun se tests, kaun si command, kab, aur fail hone pe kya*. Repo chalana, layout aur test likhne ke niyam: [README](../README.md).
+This repo tests the deployed Motadata console with the [`e2e`](https://e2e.com/docs) runner. The tests are **agent-driven**: the action under test is performed by the agent (`agent.act`), and the outcome is checked twice (a code `expect`, then `agent.assert`). This page gives one answer for every testing type: *which tests, which command, when, and what happens on failure*. How to run the repo, its layout and the rules for writing tests are in the [README](../README.md).
 
-Sab kuch teen cheezon se banta hai, aur teeno e2e ki apni documented cheezein hain:
+Everything is built from four things, and each one is a documented e2e feature:
 
-| Cheez | e2e me | Is repo me |
+| Thing | In e2e | In this repo |
 |---|---|---|
-| **Suite** — likhe hue tests ka ek hissa | tags + `e2e run --tag / --last-failed` | `lib/suites.ts` (ek hi definition) |
-| **Known bug** — test jo abhi fail hona hi hai | `fail` option (`test.fail`): expected failure | `knownBug()` in `lib/suites.ts` |
-| **Module** — console ka ek hissa | positional path `e2e run tests/<module>` | `tests/<module>/` folder |
-| **Charter** — bina test ke agent ko ek goal | `e2e explore '<goal>' --agent <persona> --session <s>` | `tests/<module>/charters.ts` |
+| **Suite** — a subset of the written tests | tags + `e2e run --tag / --last-failed` | `lib/suites.ts` (the single definition) |
+| **Known bug** — a test that is expected to fail for now | the `fail` option (`test.fail`): expected failure | `knownBug()` in `lib/suites.ts` |
+| **Module** — one part of the console | positional path `e2e run tests/<module>` | the `tests/<module>/` folder |
+| **Charter** — a goal for the agent, with no test file | `e2e explore '<goal>' --agent <persona> --session <s>` | `tests/<module>/charters.ts` |
 
 ## Testing types
 
-| Type | Sawaal | Kya chalta hai | Command | Kab |
+| Type | Question | What runs | Command | When |
 |---|---|---|---|---|
-| **Smoke** | Build zinda hai? | `smoke` tag: har module ke sabse zaroori pages, halke `admin` session pe, sirf dekhna (kuch banata/badalta nahi) | `npm run smoke` | Har deploy ke turant baad; nightly ka pehla gate |
-| **Sanity** | Is module ke mukhya kaam theek hain? | `sanity` tag, ek module | `npm run sanity -- iam` | Kisi fix / chhote release ke baad us module pe |
-| **Regression** | Kuch aur to nahi toota? | Sab tests. Known bugs bhi chalte hain — fail hon to pass gine jaate hain (expected failure) | `npm run regression` (ya `-- iam`) | Release se pehle; har raat (nightly ka doosra stage) |
-| **Retesting** | Fix sach me hua? | (a) pichhle run me jo pass nahi hue · (b) sirf known defects (`bug` tag) | `npm run retest` · `npm run bugs` | Fix deploy hone ke baad |
-| **Exploratory** | Jo kisi ne socha nahi, woh? | Module ke likhe hue charters, persona ke saath | `npm run explore -- iam` | Naye feature pe; har raat kuch (budget ke andar) |
-| **Ad-hoc** | "Zara yeh dekh lo" | Koi bhi ek goal, abhi | `npx e2e explore --session admin --agent explorer --output .e2e/explore/adhoc '<goal>'` | Jab mann kare — koi file nahi |
-| **Monkey** | Ulta-seedha input app ko todta hai? | Modules ke create forms me se random pe `fuzzer` persona, seed ke saath | `npm run monkey` (ya `-- iam`) | Har raat thoda; release se pehle zyada |
+| **Smoke** | Is the build alive? | The `smoke` tag: the most important pages of every module, on the light `admin` session, read-only (creates and changes nothing) | `npm run smoke` | Right after every deploy; the first gate of the nightly |
+| **Sanity** | Do this module's main jobs work? | The `sanity` tag, one module | `npm run sanity -- iam` | After a fix or small release, on that module |
+| **Regression** | Did anything else break? | Every test. Known bugs run too — when they fail they count as passed (expected failure) | `npm run regression` (or `-- iam`) | Before a release; every night (second stage of the nightly) |
+| **Retesting** | Is the fix really in? | (a) whatever did not pass in the previous run · (b) only the known defects (`bug` tag) | `npm run retest` · `npm run bugs` | After a fix is deployed |
+| **Exploratory** | What did nobody think of? | The module's written charters, each with a persona | `npm run explore -- iam` | On a new feature; a few every night (within the budget) |
+| **Ad-hoc** | "Just have a look at this" | Any single goal, right now | `npx e2e explore --session admin --agent explorer --output .e2e/explore/adhoc '<goal>'` | Whenever you like — no file needed |
+| **Monkey** | Does careless input break the app? | The `fuzzer` persona on randomly picked create forms of the modules, with a seed | `npm run monkey` (or `-- iam`) | A little every night; more before a release |
 
-`npm run suite -- <suite> [module…] [-- e2e flags]` in sab ka asli rasta hai (`scripts/suite.ts`); upar ke naam uske shortcuts hain (`npm run verify` jaanchta hai ki har ek ka shortcut `package.json` me hai). Koi bhi e2e flag aage de sakte ho: `npm run sanity -- iam -- --headed`.
+`npm run suite -- <suite> [module…] [-- e2e flags]` is the real entry point for all of these (`scripts/suite.ts`); the names above are shortcuts for it (`npm run verify` checks that every one has a shortcut in `package.json`). Any e2e flag can be passed along, for example to watch the browser: `npm run sanity -- iam -- --headed`.
 
-- **Retest ka "pichhla run"** = usi output folder ka aakhri run (`--last-failed` us folder ka `report.json` padhta hai). `npm run retest` default folder `.e2e` padhta hai, jahan haath se chalaye suites likhte hain. Nightly ka run `.e2e/nightly/regression` me hota hai, to uske failures ke liye: `npm run retest -- -- --output .e2e/nightly/regression`. Kuch fail na hua ho to retest khaali pass hota hai.
-- **`npm run bugs`** me sab pass = sab known bugs ab bhi hain; `UNEXPECTED_PASS` = woh bug fix ho gaya.
+- **The "previous run" for retest** is the last run in the same output folder (`--last-failed` reads that folder's `report.json`). `npm run retest` reads the default folder `.e2e`, where suites started by hand write. The nightly's regression runs in `.e2e/nightly/regression`, so for its failures use `npm run retest -- -- --output .e2e/nightly/regression`. If nothing failed, retest passes with no tests.
+- **`npm run bugs`**: everything passing means every known bug is still there; `UNEXPECTED_PASS` means that bug has been fixed.
 
-Screen ya ek test chunne ke liye tag nahi, path: `npx e2e run tests/iam/roles.e2e.ts`, `npx e2e run tests/iam/roles.e2e.ts:31`.
+To pick one screen or one test, use a path, not a tag: `npx e2e run tests/iam/roles.e2e.ts`, `npx e2e run tests/iam/roles.e2e.ts:31`.
 
-## Tags — bas yeh chaar tarah ke
+## Tags — only these four kinds
 
-| Tag | Matlab | Niyam |
+| Tag | Meaning | Rule |
 |---|---|---|
-| `smoke`, `sanity` | Test is chhote suite me bhi hai | Regression me sab tests hote hain, uska tag nahi. Smoke test `admin` session pe chale aur kuch na badle. Har module me kam se kam ek smoke test. |
-| `bug` | Known defect: brief ka behaviour jo app abhi nahi karta | Hamesha `knownBug(...)` se (neeche), haath se nahi. Smoke test pe nahi. |
-| `P0` / `P1` / `P2` | Priority | Har test pe theek ek (describe se bhi aa sakta hai). |
-| `SIT-IAM-01`, `EX-IAM-07.2`, … | Brief ka ID | Kisi module ke brief me define hona chahiye (neeche). |
+| `smoke`, `sanity` | The test is also in this small suite | Regression is every test, so it has no tag. A smoke test runs on the `admin` session and changes nothing. Every module has at least one smoke test. |
+| `bug` | Known defect: behaviour the brief asks for that the app does not have yet | Always through `knownBug(...)` (below), never by hand. Not on a smoke test. |
+| `P0` / `P1` / `P2` | Priority | Exactly one per test (it may come from the `describe`). |
+| `SIT-IAM-01`, `EX-IAM-07.2`, … | An ID from the brief | Must be defined in some module's brief (below). |
 
-Koi aur tag nahi. Naam `lib/suites.ts` me hain (`SMOKE`, `SANITY`, `BUG`, `PRIORITIES`).
+No other tags. The names live in `lib/suites.ts` (`SMOKE`, `SANITY`, `BUG`, `PRIORITIES`).
 
-**Known bug** `lib/suites.ts` ke `knownBug(reason, ...tags)` se likha jaata hai. Yeh e2e ka apna expected-failure mark hai (`fail` option, docs: reference/test → `test.fail`) + `bug` tag:
+A **known bug** is written with `knownBug(reason, ...tags)` from `lib/suites.ts`. It is e2e's own expected-failure mark (the `fail` option, docs: reference/test → `test.fail`) plus the `bug` tag:
 
 ```ts
 test('a custom role cannot move on without a description',
-  knownBug('23 Nov 2026: sirf naam se hi "Next" enabled — description optional hai', 'SIT-IAM-11', 'P2'),
+  knownBug('23 Nov 2026: "Next" is enabled with only a name — the description is optional', 'SIT-IAM-11', 'P2'),
   async ({ agent, screen, roles }) => { … });
 ```
 
-- Bug maujood hai → test fail hota hai → runner use **passed** ginta hai (wajah aur asli failure report me rehte hain), aur retry nahi karta. Isliye known bugs smoke / sanity / regression ko red nahi karte.
-- Bug fix ho gaya → test pass hota hai → runner use **`UNEXPECTED_PASS`** se fail karta hai: `knownBug(...)` hatao, saadhe tags likho.
-- `reason` me tareekh aur kya dikha likho — wahi report me dikhta hai.
-- Serial group ke andar runner khud mana karta hai (collection error).
+- The bug is present → the test fails → the runner counts it as **passed** (the reason and the real failure stay in the report) and does not retry it. So known bugs never turn smoke / sanity / regression red.
+- The bug is fixed → the test passes → the runner fails it with **`UNEXPECTED_PASS`**: remove `knownBug(...)` and write plain tags.
+- Put the date and what was seen in `reason` — that text is what the report shows.
+- The runner itself refuses the mark inside a serial group (collection error).
 
-**Brief ID** ka shape `<KIND>-<MODULE>-<n>[.<n>]` hai, jahan `<MODULE>` module ke folder ka naam hai, bade aksharon me (`tests/iam` → `SIT-IAM-01`, `BEH-IAM-12`, `EX-IAM-07.2`). ID wahi hai jo `docs/<module>/acceptance-brief.md` me `### <id>` heading ho, ya kisi table row ka pehla cell (`| <id> | … |`). Test kisi bhi module ke brief ka ID le sakta hai (Tickets ka test IAM ka `SIT-IAM-07` cover kar sakta hai); brief ka ID tab covered hai jab koi bhi test use le.
+A **brief ID** has the shape `<KIND>-<MODULE>-<n>[.<n>]`, where `<MODULE>` is the module's folder name in upper case (`tests/iam` → `SIT-IAM-01`, `BEH-IAM-12`, `EX-IAM-07.2`). An ID is whatever appears in `docs/<module>/acceptance-brief.md` as a `### <id>` heading or as the first cell of a table row (`| <id> | … |`). A test may carry an ID from any module's brief (a Tickets test can cover IAM's `SIT-IAM-07`); a brief ID is covered once any test carries it.
 
-`npm run verify` yeh sab bina app ke jaanchta hai (galat spelling wala tag test ko chupchaap suite se bahar kar deta): tags, har module ka smoke test, brief ka coverage, charters, aur `package.json` ke shortcuts. `npm test` = typecheck + verify; CI ise har run se pehle aur har push / pull request pe chalata hai.
+`npm run verify` checks all of this without opening the app (a misspelled tag would silently drop a test from its suite): tags, a smoke test per module, brief coverage, charters, and the `package.json` shortcuts. `npm test` = typecheck + verify; CI runs it before every run and on every push / pull request.
 
-## Bug ka safar: exploratory → retest → regression
+## Life of a bug: exploratory → retest → regression
 
-1. **Mila** — explore/monkey finding, ya brief ka koi behaviour jo app nahi karta.
-2. **Saabit** — us finding ka test likho: steps `agent.act`, expected behaviour aakhir me code `expect` + `agent.assert`. Test tabhi bug hai jab woh *usi wajah se* fail ho (e2e docs: bug bash → "Verify"). `knownBug('<tareekh>: <kya dikha>', …)`.
-3. **Track** — nightly report ka "Known bugs" (aur `npm run bugs`) batata hai kaun se bugs ab bhi hain, wajah ke saath.
-4. **Fix hua** — wahi test pass hone lagta hai: runner `UNEXPECTED_PASS` deta hai, nightly use "Fixed — knownBug mark hatao" me dikhata hai.
-5. **Regression** — `knownBug(...)` ki jagah saadhe tags likho. Ab woh ek aam regression test hai.
+1. **Found** — an explore/monkey finding, or behaviour from the brief that the app does not have.
+2. **Proven** — write a test for the finding: the steps as `agent.act`, the expected behaviour at the end as a code `expect` + `agent.assert`. The test is only a bug report if it fails *for that reason* (e2e docs: bug bash → "Verify"). Mark it `knownBug('<date>: <what was seen>', …)`.
+3. **Tracked** — the nightly report's "Known bugs" section (and `npm run bugs`) says which bugs are still present, with the reason.
+4. **Fixed** — the same test starts passing: the runner reports `UNEXPECTED_PASS`, and the nightly report lists it under "Fixed" in its Known bugs section.
+5. **Regression** — replace `knownBug(...)` with plain tags. It is now an ordinary regression test.
 
 ## Nightly pipeline (`npm run nightly`)
 
 ```
-smoke ──fail──▶ RED, baaki stages nahi chalte (toota build model calls na khaaye)
+smoke ──fail──▶ RED, the other stages do not run (a broken build must not burn model calls)
   │pass
-regression (sab tests, ek hi run)  → regression nateeja  +  known bugs (ab bhi hain / fixed)
+regression (every test, one run)  → regression result  +  known bugs (still present / fixed)
   │
-exploration: kuch likhe hue charters  →  monkey (random create forms)
+exploration: a few written charters  →  monkey (random create forms)
   │
 report (HTML + summary) → verdict → Slack/Teams
 ```
 
-- Nightly hamesha sab modules pe chalta hai. Ek module ya ek suite ke liye `npm run suite -- …`.
-- **RED**: smoke fail, koi setup fail, regression me koi test fail, kisi run ka error (config / engine / model / stage ki time limit), ya explore me high/critical issue.
-- **YELLOW**: flaky tests (retry pe pass), chhote issues / warnings, blocked ya adhoori exploration, Ctrl-C se roka gaya run, ya koi known bug fix ho gaya (mark hatana baaki — app ki sehat ki khabar achhi hai, isliye RED nahi).
-- Known bug ka ab bhi hona verdict nahi badalta — woh pehle se pata hai.
-- Sab tests ek hi run me chalte hain kyunki har `e2e` run apne setup dobara chalata hai (module ka test data dobara banta).
-- **Har stage ki apni time limit** hai (`nightly.config.ts`: smoke, regression, har charter), to raat khud khatam hoti hai aur report hamesha banti hai. CI job ka timeout in sab ke jod se upar rakho — CI jab job ko maarta hai tab report nahi banti.
-- **Exploration ka budget tay hai**, modules badhne se raat lambi nahi hoti: har raat sab modules ke likhe hue charters me se `explore.charters` (seed se chune, to har raat alag) + `explore.monkey.count` monkey forms. Seed aaj ki tareekh hai (`YYYYMMDD`) aur report me likha hota hai.
+- The nightly always runs on all modules. For one module or one suite use `npm run suite -- …`.
+- **RED**: smoke fails, any setup fails, any regression test fails, a run errors (config / engine / model / a stage's time limit), or exploration reports a high/critical issue.
+- **YELLOW**: flaky tests (passed on retry), small issues / warnings, blocked or incomplete exploration, a run stopped with Ctrl-C, or a known bug that got fixed (the mark still has to be removed — good news about the app, so not RED).
+- A known bug that is still present does not change the verdict — it is already known.
+- All tests run in a single run because every `e2e` run executes its setups again (and so rebuilds each module's test data).
+- **Every stage has its own time limit** (`nightly.config.ts`: smoke, regression, each charter), so the night ends by itself and the report is always written. Keep the CI job timeout above the sum of those limits — when CI kills the job, no report is written.
+- **The exploration budget is fixed**, so the night does not get longer as modules are added: each night runs `explore.charters` of the written charters across all modules (picked by seed, so different every night) plus `explore.monkey.count` monkey forms. The seed is today's date (`YYYYMMDD`) and is printed in the report.
+- Flags after `--` go to every stage's e2e run: `npm run nightly -- --headed`.
 
-Kya chale aur kitna, `nightly.config.ts` me. Charters modules se aate hain, config me sirf budget hai.
+What runs and how much is set in `nightly.config.ts`. Charters come from the modules; the config only holds the budget.
 
 ## Exploratory, ad-hoc, monkey
 
-`e2e explore` agent ko test file nahi, goal deta hai: woh steps plan karta hai, app chalata hai, aur har defect evidence ke saath report karta hai (`issue` run fail karta hai, `warning` nahi).
+`e2e explore` gives the agent a goal, not a test file: it plans the steps, drives the app and reports every defect with evidence (an `issue` fails the run, a `warning` does not).
 
-- **Charter** = ek area + ek posture + ek sentence, start route ke saath. Postures aur unke personas (`lib/charters.ts` → `PERSONAS`; har ek ka stance `e2e.config.ts` → `agents` me):
+- A **charter** = one area + one posture + one sentence, with a start route. The postures and their personas (`lib/charters.ts` → `PERSONAS`; each one's stance is in `e2e.config.ts` → `agents`):
 
-  | Persona | Posture | Charter ka shape |
+  | Persona | Posture | Shape of the charter |
   |---|---|---|
-  | `explorer` | Naya user; state (reload/back ke baad); error paths | `Starting at /users, invite a person and follow the invitation list like a first-time admin; report anything confusing, broken or inconsistent` |
-  | `skeptic` | Numbers aur copy | `Starting at /users, compare every count, status and date on the page with the same fact elsewhere; report any that disagree` |
+  | `explorer` | A new user; state (after reload/back); error paths | `Starting at /users, invite a person and follow the invitation list like a first-time admin; report anything confusing, broken or inconsistent` |
+  | `skeptic` | Numbers and copy | `Starting at /users, compare every count, status and date on the page with the same fact elsewhere; report any that disagree` |
   | `fuzzer` | Edge input | `Starting at /roles, open Create role and try as the role name: left empty, 300 characters, unicode, leading spaces; report validation that is missing or wrong` |
 
-- **Monkey** = wahi `fuzzer`, lekin nishaana random: modules ki `monkey` list ke **create forms** (`{ route, form }`) me se kuch chune jaate hain, aur agent sirf us form ke andar kaam karta hai. Poori screen nahi — maujooda records ke forms me asli logon ka data hota hai. Seed report me hota hai: `MONKEY_SEED=<seed> npm run monkey` wahi forms dobara chunta hai.
-- **Ad-hoc** ke liye koi code nahi: `npx e2e explore --session admin --agent explorer --output .e2e/explore/adhoc 'Starting at /roles, …'`. `--agent` ke bina `default` agent chalta hai, jiska stance ek test step ke liye bana hai, exploration ke liye nahi; `--output` ke bina report `.e2e/report.json` pe likhi jaati hai aur agla `npm run retest` use "pichhla run" samajh leta hai. Goal me likho ki kuch na badle, ya jo bane uska naam `<module>-e2e-x-` se shuru ho (tabhi module ka cleanup use hatata hai).
-- Shared tenant ke niyam har agent ke `context` me hain (admin ka apna account/sessions, Tenant Owner, SSO settings kabhi nahi; asli logon ko mail nahi) aur har charter ke aakhir me (`lib/charters.ts`): jo save karo uska naam `<module>-e2e-x-<run id>-` se shuru; jo tumne nahi banaya use sirf padhne ke liye kholo.
-- Findings agent ke claims hain. Bug file karne se pehle upar ka "Saabit" step.
+- **Monkey** = the same `fuzzer`, but with a random target: a few **create forms** (`{ route, form }`) are picked from the modules' `monkey` lists, and the agent works only inside that form. Not the whole screen — the forms of existing records hold real people's data. The seed is in the report: `MONKEY_SEED=<seed> npm run monkey` picks the same forms again.
+- **Ad-hoc** needs no code: `npx e2e explore --session admin --agent explorer --output .e2e/explore/adhoc 'Starting at /roles, …'`. Without `--agent` the `default` agent runs, whose stance is written for a single test step, not for exploration; without `--output` the report is written to `.e2e/report.json`, and the next `npm run retest` takes it for the "previous run". Say in the goal that nothing should be changed, or that anything created must have a name starting with `<module>-e2e-x-` (only then does the module's cleanup remove it).
+- The shared-tenant rules are in every agent's `context` (never the admin's own account/sessions, the Tenant Owner or the SSO settings; no mail to real people) and at the end of every charter (`lib/charters.ts`): whatever you save gets a name starting with `<module>-e2e-x-<run id>-`; a record you did not create may only be opened to read it.
+- Findings are the agent's claims. Before filing a bug, do the "Proven" step above.
 
-## Naya module jodna
+## Adding a module
 
-`tests/<module>/` banao — bas. Suites, charters, verify aur nightly use khud dhoondh lete hain; shared code me koi badlav nahi.
+Create `tests/<module>/` — that is all. Suites, charters, verify and the nightly find it by themselves; nothing in the shared code changes.
 
 ```
 tests/<module>/
-  <module>.ts            session naam, data prefix, agent context
-  <module>.setup.e2e.ts  adminSignIn → apna purana data sweep → apna test data → session.save
-  smoke.e2e.ts           `smoke` tests, `admin` session pe (kam se kam ek — zaroori)
-  charters.ts            exploratory charters + monkey ke create forms
-  pages/  fixtures.ts    page objects (tests/app/ui.ts pe)
-  coverage.ts            brief ke jo IDs automate nahi ho sakte, wajah ke saath (`GAPS`)
-  *.e2e.ts               tests — kuch pe `sanity`
-docs/<module>/acceptance-brief.md   IDs `<KIND>-<MODULE>-<n>` (upar "Brief ID")
+  <module>.ts            session name, data prefix, agent context
+  <module>.setup.e2e.ts  adminSignIn → sweep its own old data → create its test data → session.save
+  smoke.e2e.ts           `smoke` tests on the `admin` session (at least one — required)
+  charters.ts            exploratory charters + the create forms for monkey
+  pages/  fixtures.ts    page objects (built on tests/app/ui.ts)
+  coverage.ts            brief IDs that cannot be automated, with the reason (`GAPS`)
+  *.e2e.ts               tests — some tagged `sanity`
+docs/<module>/acceptance-brief.md   IDs `<KIND>-<MODULE>-<n>` (see "brief ID" above)
 ```
 
-- **Data:** apna prefix (`<module>-e2e`) aur apna session naam. Naam `freshNames(prefix)` se — har attempt ke naye, aur naam me banne ka samay hota hai.
-- **Cleanup:** setup `sweep()` se apne prefix wala purana data hatata hai, lekin 3 ghante se naya data nahi chhedta — woh kisi chal rahe run ka ho sakta hai (nightly, kisi doosri machine ka run, ek explorer). Kuch na hate to setup fail hota hai. Ek hi checkout me do runs ek saath mat chalao: setup ka banaya test data (jaise IAM ka `.e2e/iam-pool.json`) us checkout ka hota hai.
-- **Login:** `adminSignIn` (`tests/app/auth.ts`). Login zaroori hai: `APP_ADMIN_EMAIL` aur Mailosaur settings ke bina admin setup fail hota hai aur run red — kuch chupchaap skip nahi hota.
-- **Shared code:** login, UI kit, naming, cleanup aur console ka apna smoke `tests/app/` me hain. Kisi doosre module ka page chahiye to wahi import karo (`tests/iam/pages/users.ts`).
-- Aakhir me `npm run verify -- <module>`.
+- **Data:** its own prefix (`<module>-e2e`) and its own session name. Names come from `freshNames(prefix)` — new for every attempt, and the name carries its creation time.
+- **Cleanup:** the setup uses `sweep()` to remove old data with its prefix, but leaves anything younger than 3 hours alone — it may belong to a run in progress (the nightly, a run on another machine, an explorer). If something cannot be removed, the setup fails. Do not start two runs at the same time in one checkout: the test data a setup creates (such as IAM's `.e2e/iam-pool.json`) belongs to that checkout.
+- **Login:** `adminSignIn` (`tests/app/auth.ts`). Login is required: without `APP_ADMIN_EMAIL` and the Mailosaur settings the admin setup fails and the run is red — nothing is skipped silently.
+- **Shared code:** login, the UI kit, naming, cleanup and the console's own smoke tests are in `tests/app/`. If you need another module's page, import it from there (`tests/iam/pages/users.ts`).
+- Finish with `npm run verify -- <module>`.
 
-## Kharcha aur replay cache
+## Cost and the replay cache
 
-- Pass hua `agent.act` step `.e2e/cache/` me record hota hai aur agli baar bina model call ke replay hota hai; screen badle to agent wahin se sambhal leta hai (self-healing). `agent.assert` aur exploration har baar model call karte hain.
-- e2e docs ki salaah: cache commit karo, CI me woh read-only rehta hai.
-- `npm run cost` ek run ka kharcha dikhata hai (`.e2e/report.json`, ya `npm run cost -- <report.json>`): har agent step ke tokens, replay aur USD. Rates `lib/pricing.ts` me hain, tareekh ke saath — naya model use karo to pehle wahan uska rate.
-- Smoke aur sanity chhote isiliye hain — unhe baar-baar chalana sasta rehna chahiye. Exploration ka kharcha `nightly.config.ts` ke budget se bandha hai: (`charters` × `maxSteps`) + (`monkey.count` × `monkey.maxSteps`) steps har raat.
+- A passing `agent.act` step is recorded in `.e2e/cache/` and replayed next time without a model call; if the screen has changed, the agent takes over from that point (self-healing). `agent.assert` and exploration call the model every time.
+- The e2e docs recommend committing the cache; in CI it is read-only.
+- `npm run cost` shows what one run cost (`.e2e/report.json`, or `npm run cost -- <report.json>`): tokens, replays and USD for every agent step. The rates are in `lib/pricing.ts`, with their date — before using a new model, add its rate there.
+- Smoke and sanity are small for this reason — running them often has to stay cheap. Exploration's cost is bounded by the budget in `nightly.config.ts`: (`charters` × `maxSteps`) + (`monkey.count` × `monkey.maxSteps`) steps per night.
 
 ## CI
 
-- **Har push / pull request:** `npm test` (typecheck + verify) — app nahi khulta, model call nahi.
-- **Nightly** (schedule): `npm test`, phir `npm run nightly`.
-- **Haath se** (workflow dispatch): `suite` (nightly / smoke / sanity / regression / bugs / explore / monkey) + `module`. Deploy ke baad smoke isi se.
-- `retest` CI ke choices me nahi hai: use pichhle run ka `report.json` usi machine pe chahiye, aur CI ka runner har baar naya hota hai. CI me failed job dobara chalao.
+- **Every push / pull request:** `npm test` (typecheck + verify) — the app is not opened, no model calls.
+- **Nightly** (schedule): `npm test`, then `npm run nightly`.
+- **By hand** (workflow dispatch): `suite` (nightly / smoke / sanity / regression / bugs / explore / monkey) + `module`. This is how smoke is run after a deploy.
+- `retest` is not among the CI choices: it needs the previous run's `report.json` on the same machine, and a CI runner is new every time. In CI, re-run the failed job.
 
-Setup (variables, secrets, report kahan milti hai): [README → CI](../README.md#ci).
+Setup (variables, secrets, where the report ends up): [README → CI](../README.md#ci).

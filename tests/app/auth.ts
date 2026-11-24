@@ -45,37 +45,42 @@ function adminEmail(): string {
  * Sign-in ki ek koshish: /login pe email daal ke code mangwao, Mailosaur se usi request ke baad aaya code
  * padho, type karo. Code ke 6 alag boxes hain (har box ek digit, phir agle pe focus), isliye pehle box me
  * key-by-key; chhatha digit likhte hi app khud verify karta hai.
- * `false` = app ne apna "Request timed out." dikhaya (code maangte ya verify karte): sign-in service ne waqt
- * pe jawab nahi diya.
+ * Lautata hai app ka error message agar usne sign-in ki jagah alert dikhaya, warna `undefined` (signed in).
  */
-async function signInOnce({ app, screen, browser }: Ctx, email: string): Promise<boolean> {
-  const timedOut = screen.getByRole('alert').filter({ hasText: 'Request timed out.' });
+async function signInOnce({ app, screen, browser }: Ctx, email: string): Promise<string | undefined> {
+  const alert = screen.getByRole('alert').first();
   await app.open('/login');
   await screen.getByRole('textbox', 'Work email').fill(email);
   const requestedAt = new Date();
   await screen.getByRole('button', 'Email me a sign-in code').tap();
   const otp = screen.getByRole('textbox', 'OTP digit 1 of 6');
-  await expect(otp.or(timedOut)).toBeVisible({ timeout: 60_000 });
-  if (await timedOut.isVisible()) return false;
+  await expect(otp.or(alert)).toBeVisible({ timeout: 60_000 });
+  if (!(await otp.isVisible())) return (await alert.textContent()) ?? '';
 
   await otp.pressSequentially(await latestCode(email, requestedAt));
   const left = async () => !/\/login/.test(await browser.url());
   await expect
-    .poll(async () => (await left()) || (await timedOut.isVisible()), { timeout: 60_000, message: `sign-in (${email}): code ke baad na app khula, na "Request timed out." aaya` })
+    .poll(async () => (await left()) || (await alert.isVisible()), { timeout: 60_000, message: `sign-in (${email}): code ke baad na app khula, na koi error aaya` })
     .toBe(true);
-  return left();
+  return (await left()) ? undefined : ((await alert.textContent()) ?? '');
 }
 
 /**
- * Email code se sign in. Test environment ki sign-in service idle ke baad pehli request pe aksar time out
- * hoti hai (23 Nov 2026: har run ka pehla sign-in), aur time out hua code dobara nahi chalta — app khud kehta
- * hai "Request a new code and try again". Isliye us haal me poora sign-in ek baar dobara, naye code se, aur
- * warning log me. Yeh setup ki provisioning hai; sign-in ke apne tests is helper se nahi guzarte.
+ * Email code se sign in. Test environment ki sign-in service idle ke baad pehli ek-do requests pe fail hoti hai
+ * (23–24 Nov 2026, har run ka pehla sign-in: "Request timed out.", ya "Your code was accepted, but the sign-in
+ * service did not open a session. Request a new code and try again."), aur fail hua code dobara nahi chalta.
+ * Isliye wahi jo app kehta hai: naya code maang ke dobara, zyada se zyada 3 koshish, har error log me.
+ * Yeh setup ki provisioning hai; sign-in ke apne tests is helper se nahi guzarte.
  */
 export async function signIn(fx: Ctx, email: string): Promise<void> {
-  if (await signInOnce(fx, email)) return;
-  console.warn(`[login] ${email}: app ne "Request timed out." dikhaya — naye code se ek baar dobara`);
-  if (!(await signInOnce(fx, email))) throw new Error(`sign-in (${email}): app ne do baar "Request timed out." dikhaya`);
+  const errors: string[] = [];
+  while (errors.length < 3) {
+    const error = await signInOnce(fx, email);
+    if (error === undefined) return;
+    errors.push(error);
+    console.warn(`[login] ${email}: app ne sign-in nahi kiya ("${error}") — koshish ${errors.length}/3`);
+  }
+  throw new Error(`sign-in (${email}): 3 koshishon me nahi hua — ${errors.join(' | ')}`);
 }
 
 /** Invitee ka pehla sign-in: /welcome pe naam (zaroori), baaki details skip. */
