@@ -58,6 +58,8 @@ npm run nightly                               # the whole pipeline
 npm run nightly -- --headed                   # the same, with the browser visible
 ```
 
+Every command, with headed variants and runner flags: [docs/commands.md](docs/commands.md).
+
 In the ad-hoc command, `--agent explorer` selects the exploration persona (without it the `default` agent runs, which is meant for a single test step), and its own `--output` folder protects `.e2e/report.json`, which `npm run retest` reads. When to run each type: [docs/testing.md → "Testing types"](docs/testing.md#testing-types).
 
 ## Repo layout
@@ -84,6 +86,7 @@ tests/
   <module>/            one module of the console — currently: iam/
 docs/
   testing.md           strategy
+  commands.md          every command you can run
   <module>/acceptance-brief.md    what is expected of the module; test tags are its IDs
 .github/workflows/nightly.yml  ·  .github/workflows/test.yml  ·  azure-pipelines.yml     CI
 ```

@@ -189,9 +189,13 @@ describe('IAM person lifecycle', { session: IAM_SESSION, agentContext: IAM_CONTE
       await users.search(user.email);
       await users.openProfile(user.email);
 
-      await agent.act('click Edit on this profile and turn on "Set an account expiry"; do not save');
+      await agent.act('click Edit on this profile and stop at the form that opens; do not change or save anything');
+      // Switch disabled ho to agent ke paas karne ko kuch nahi (woh "blocked" bolta, fail nahi) — isliye pehle code poochta hai.
+      const expiry = screen.getByTestId('edit-expiry-switch');
+      await expect(expiry, 'brief: an account can have an end date').toBeEnabled();
 
-      await expect(screen.getByTestId('edit-expiry-switch'), 'brief: an account can have an end date').toBeChecked();
+      await agent.act('turn on "Set an account expiry"; do not save');
+      await expect(expiry).toBeChecked();
       await agent.assert('the account expiry is switched on and offers an end date for this account');
     });
   });
