@@ -108,7 +108,7 @@ What runs and how much is set in `nightly.config.ts`. Charters come from the mod
 
 ## Adding a module
 
-Create `tests/<module>/` — that is all. Suites, charters, verify and the nightly find it by themselves; nothing in the shared code changes.
+Create `tests/<module>/` — that is all. Suites, charters, verify and the nightly find it by themselves; nothing in the shared code changes. Step by step: [adding-a-module.md](adding-a-module.md). The guide for whoever writes the acceptance brief: [writing-an-acceptance-brief.md](writing-an-acceptance-brief.md).
 
 ```
 tests/<module>/

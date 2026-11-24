@@ -87,6 +87,8 @@ tests/
 docs/
   testing.md           strategy
   commands.md          every command you can run
+  adding-a-module.md   from a brief to a module's tests: who does what, and the steps
+  writing-an-acceptance-brief.md   for the brief's author (PM / BA) — needs no repo access
   <module>/acceptance-brief.md    what is expected of the module; test tags are its IDs
 .github/workflows/nightly.yml  ·  .github/workflows/test.yml  ·  azure-pipelines.yml     CI
 ```
@@ -139,7 +141,7 @@ test('a new custom role is listed as Custom', { tags: ['sanity', 'SIT-IAM-11', '
 
 ## Modules
 
-A new module is a `tests/<module>/` folder, with no change to the shared code: [docs/testing.md → "Adding a module"](docs/testing.md#adding-a-module).
+A new module is a `tests/<module>/` folder, with no change to the shared code: [docs/adding-a-module.md](docs/adding-a-module.md). The module's PM writes the acceptance brief from [docs/writing-an-acceptance-brief.md](docs/writing-an-acceptance-brief.md), which needs no access to this repo.
 
 ### IAM (`tests/iam/`)
 
