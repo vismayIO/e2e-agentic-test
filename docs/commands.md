@@ -59,7 +59,32 @@ npx e2e run tests/app/smoke.e2e.ts --headed            # the console's own smoke
 
 IAM test files (all `tests/iam/<name>.e2e.ts`): `access-profiles`, `import`, `invite`, `roles`, `service-accounts`, `sessions`, `sign-in`, `smoke`, `users-lifecycle`. Every file except `smoke` first runs the IAM setup (about 5–7 minutes: it signs in 8 test users).
 
-## 4. Exploration (no test file)
+## 4. By priority or tag
+
+Every test has one priority tag: `P0`, `P1` or `P2`.
+
+```bash
+npx e2e run --tag P1 --headed                    # P1 only
+npx e2e run --tag P2 --headed                    # P2 only
+npx e2e run --tag P1,P2 --headed                 # P1 or P2
+npx e2e run tests/iam --tag P1 --headed          # one module only
+npx e2e run tests/iam --tag sanity,P1 --tag-mode all --headed    # P1 inside a suite (both tags must match)
+npx e2e run --exclude-tag P2 --headed            # everything except P2
+npx e2e list --tag P1                            # see which tests a tag selects, without running them
+```
+
+Through the npm shortcuts, the flag goes after the second `--`:
+
+```bash
+npm run regression -- iam -- --tag P1 --headed
+npm run regression -- -- --tag P1,P2 --headed
+```
+
+Do not add `--tag` to `npm run smoke`, `sanity` or `bugs`: they already pass their own tag, and several tags mean "any of them" by default, so the run gets wider, not narrower. Use the `--tag sanity,P1 --tag-mode all` form instead.
+
+A brief ID is a tag too: `npx e2e run --tag BEH-IAM-12 --headed` runs every test that proves that item.
+
+## 5. Exploration (no test file)
 
 ```bash
 npm run monkey -- iam -- --headed       # fuzzer on 2 random create forms (~13 min)
@@ -82,7 +107,7 @@ npx e2e explore --session admin --agent fuzzer --headed --max-steps 4 --output .
 
 In an ad-hoc goal, either say that nothing should be changed, or that anything created must have a name starting with `<module>-e2e-x-` (only then does the module's cleanup remove it).
 
-## 5. Nightly pipeline (everything, ~1 hour)
+## 6. Nightly pipeline (everything, ~1 hour)
 
 ```bash
 npm run nightly                                          # smoke → regression → exploration → report
@@ -91,7 +116,7 @@ systemd-inhibit --what=idle:sleep npm run nightly        # keep the laptop awake
 NIGHTLY_FAIL_ON=never npm run nightly                    # exit 0 even on a RED verdict
 ```
 
-## 6. Looking at results
+## 7. Looking at results
 
 ```bash
 xdg-open .e2e/report.html                 # report of the last suite run
@@ -101,7 +126,7 @@ npm run cost                              # model cost of the last run
 npm run cost -- .e2e/nightly/regression/report.json      # cost of the nightly's regression
 ```
 
-## 7. Useful runner flags
+## 8. Useful runner flags
 
 These work with `npx e2e run …` and, after `--`, with any suite:
 
@@ -113,7 +138,9 @@ These work with `npx e2e run …` and, after `--`, with any suite:
 | `--debug` | Print phase timings and the agent step table |
 | `--retries 0` | No retries |
 | `--max-failures 1` | Stop at the first failure |
-| `--tag P0` | Only tests with this tag |
+| `--tag P0` | Only tests with this tag; several, comma-separated, mean any of them |
+| `--tag-mode all` | With several tags: only tests that have every one |
+| `--exclude-tag P2` | Leave out tests with this tag |
 | `--grep "<text>"` | Only tests whose title matches |
 | `--workers 1` | One test at a time |
 
